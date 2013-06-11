@@ -4,6 +4,7 @@
   "dependencies": {
     "redis" : "latest"
     , "connect-redis" : "latest"
+    , "octonode" : "latest"
 
   },
   "engines": {

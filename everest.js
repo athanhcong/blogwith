@@ -1,5 +1,11 @@
 const KEY = 'express.sid'
-  , SECRET = 'express';
+  , SECRET = 'express'
+  , GITHUB_CLIENT_ID = '1144e0f6ba3889d04621'
+  , GITHUB_CLIENT_SECRET = '910f3c346e97c8bdfccbb9001d7b010f1ce6a0e3'
+  ;
+
+
+
 
 global.config = require('./config.js');
 
@@ -30,6 +36,19 @@ var  redis = require('redis')
                              , store: store
                              ,cookie: { secure: false, maxAge: 86400000 }
                             });
+
+
+var github = require('octonode')
+  , url = require('url')
+  , qs = require('querystring');
+// Build the authorization config and url
+var auth_url = github.auth.config({
+  id: GITHUB_CLIENT_ID,
+  secret: GITHUB_CLIENT_SECRET
+}).login(['user', 'repo', 'gist']);
+
+// Store info to verify against CSRF
+var state = auth_url.match(/&state=([0-9a-z]{32})/i);
 
 //Setup ExpressJS
 app.configure('development', function(){
@@ -110,6 +129,33 @@ app.all('/authentication/callback', function(req, res){
 			});
   });
 });
+
+
+app.get('/github/authentication', function(req, res){
+  console.log("github/authentication");
+  res.writeHead(301, {'Content-Type': 'text/plain', 'Location': auth_url})
+  res.end('Redirecting to ' + auth_url);
+});
+
+
+app.all('/github/authentication/callback', function(req, res){
+  console.log("github/authentication/callback");
+  var uri = url.parse(req.url);
+  var values = qs.parse(uri.query);
+  // Check against CSRF attacks
+  // if (!state || state[1] != values.state) {
+  //   res.writeHead(403, {'Content-Type': 'text/plain'});
+  //   res.end('');
+  // } else {
+    github.auth.login(values.code, function (err, token) {
+      console.log("github/authentication/callback " + err + ' ' + token);
+      // res.writeHead(200, {'Content-Type': 'text/plain'});
+      req.session.github = {'authToken': token};
+      res.redirect('/');
+    });
+  // }
+});
+
 
 app.all('/logout', function(req, res){
 	
@@ -477,4 +523,4 @@ app.get('/sync-chunk', function(req, res){
 
 app.listen(config.serverPort);
 
-console.log("Listening on port" + config.serverPort);
+console.log("Listening on port " + config.serverPort);
