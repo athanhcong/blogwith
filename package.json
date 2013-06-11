@@ -2,9 +2,12 @@
   "name": "everest-js",
   "version": "0.0.1",
   "dependencies": {
+    "redis" : "latest"
+    , "connect-redis" : "latest"
+
   },
   "engines": {
-    "node": "0.8.x",
-    "npm": "1.1.x"
+    "node": "0.8.x"
+    , "npm": "1.1.x"
   }
 }

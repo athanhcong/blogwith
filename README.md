@@ -1,4 +1,4 @@
-# Everest JS
+# Blog with Evernote
 
 Everest is a <b>ready to run</b> web application using [Evernote API](http://dev.evernote.com/documentation/reference/). This application is an example of how to create [Node.js](http://nodejs.org) application that connect to Evernote. I puts several modules (Thrift, OAuth, and etc) all together to make it really easy for beginners.
 

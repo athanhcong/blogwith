@@ -1,3 +1,6 @@
+const KEY = 'express.sid'
+  , SECRET = 'express';
+
 global.config = require('./config.js');
 
 var util = require('util');
@@ -15,6 +18,19 @@ var evernote = new Evernote(
 		config.evernoteUsedSandbox
 		);
 
+var  redis = require('redis')
+  , redisClient = redis.createClient()
+  // , connect = require('connect')
+  , RedisStore = require('connect-redis')(express)
+  , store = new RedisStore({
+    client: redisClient,
+  })
+  , session = express.session({secret: SECRET
+                             , key: KEY
+                             , store: store
+                             ,cookie: { secure: false, maxAge: 86400000 }
+                            });
+
 //Setup ExpressJS
 app.configure('development', function(){
   app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
@@ -25,9 +41,7 @@ app.configure('development', function(){
 	app.use("/website", express.static(__dirname + '/website'));
 	
 	//Use session
-	app.use(express.session(
-		{ secret: "EverestJS" }
-	));
+	app.use(session);
 });
 
 app.dynamicHelpers({
@@ -462,3 +476,5 @@ app.get('/sync-chunk', function(req, res){
 });
 
 app.listen(config.serverPort);
+
+console.log("Listening on port" + config.serverPort);
