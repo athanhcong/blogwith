@@ -35,6 +35,8 @@ $(function() {
   exampleGetUser(function(err, user) {
     if(err) {
       alert('Invalid Authentication')
+      // console.log('Invalid Authentication')
+
       window.location = '/';
     }else{
       $('#username').text(user.username)
