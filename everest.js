@@ -359,40 +359,40 @@ app.get('/evernote/create-notebook', function(req, res){
 });
 
 
-app.get('/evernote/sync', function(req, res){
-  console.log("/evernote/create-notebook");
+// app.get('/evernote/sync', function(req, res){
+//   console.log("/evernote/create-notebook");
 
-  if(!req.session.user) return res.send('Unauthenticate',401);
-  if(!req.body) return res.send('Invalid content',400);
+//   if(!req.session.user) return res.send('Unauthenticate',401);
+//   if(!req.body) return res.send('Invalid content',400);
 
-  // Check notebook
-  var userId = req.session.user.id;
-  var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, data){
-    if(!data) return res.send('Can not find notebook',400);
+//   // Check notebook
+//   var userId = req.session.user.id;
+//   var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, data){
+//     if(!data) return res.send('Can not find notebook',400);
 
-    // Get all notes
-    var notebook = JSON.parse(data);
+//     // Get all notes
+//     var notebook = JSON.parse(data);
   
-    console.log("Retrieve change from notebook " + notebook.name);
+//     console.log("Retrieve change from notebook " + notebook.name);
     
-    // evernote.createNotebook(userInfo, notebook, function(err, data) {
-    //   console.log("Creating " + err + ' ' + JSON.stringify(data));
-    //   if (err) {
-    //     if(err == 'EDAMUserException') return res.send(err,403);
-    //     return res.send(err,500);
-    //   } else {
-    //     redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
-    //   }
-    // });
-    return res.redirect('/');
+//     // evernote.createNotebook(userInfo, notebook, function(err, data) {
+//     //   console.log("Creating " + err + ' ' + JSON.stringify(data));
+//     //   if (err) {
+//     //     if(err == 'EDAMUserException') return res.send(err,403);
+//     //     return res.send(err,500);
+//     //   } else {
+//     //     redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
+//     //   }
+//     // });
+//     return res.redirect('/');
 
-  });
+//   });
 
-  console.log("Retrieve notebook " + JSON.stringify(result));
-});
+//   console.log("Retrieve notebook " + JSON.stringify(result));
+// });
 
-app.get('/evernote/notes', function(req, res){
-  console.log('/evernote/notes');
+app.get('/evernote/sync', function(req, res){
+  console.log('/evernote/sync');
   if(!req.session.user) return res.send('Unauthenticate',401);
 
   var userInfo  = req.session.user;
