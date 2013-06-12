@@ -5,21 +5,26 @@ const KEY = 'express.sid'
   ;
 
 
-
-
 var GlobalConfig = require('./config.js');
 global.config = new GlobalConfig();
+var config = global.config;
 
+console.log("Starting with configuration");
 console.log(global.config);
+
+
 
 var util = require('util');
 var querystring = require('querystring');
-var express = require('express');
-var config = global.config;
+var express = require('express')
+  , connect = require('connect')
+  , http = require('http');
+
+
 
 var app = express()
-  , http = require('http')
   , server = http.createServer(app);
+
 
 // Create an Evernote instance
 var Evernote = require('./evernode').Evernote;
@@ -61,6 +66,8 @@ var RedisStore = require('connect-redis')(express)
                             });
 
 
+//
+
 var github = require('octonode')
   , url = require('url')
   , qs = require('querystring');
@@ -75,6 +82,8 @@ var githubClient = github.client({
   id: GITHUB_CLIENT_ID,
   secret: GITHUB_CLIENT_SECRET
 });
+
+
 var ghme   = githubClient.me();
 
 // Store info to verify against CSRF
@@ -83,6 +92,7 @@ var state = auth_url.match(/&state=([0-9a-z]{32})/i);
 //Setup ExpressJS
 app.configure('development', function(){
   app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+
 	app.use(express.cookieParser()); 
 	app.use(express.bodyParser());
 	
@@ -93,6 +103,7 @@ app.configure('development', function(){
 
 	app.use(express.static(__dirname + "/public"));
 	//Use session
+  app.use(app.router);
 	app.use(session);
 });
 
