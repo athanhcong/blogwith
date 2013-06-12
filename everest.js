@@ -630,7 +630,7 @@ var createGithubPost = function(userId, note, callback){
   var contentMarkdown = md(contentHtml);
   var title = note.title;
 
-  contentMarkdown += '---\nlayout: post\ntitle: ' + title + '\n---\n' + contentMarkdown;
+  contentMarkdown = '---\nlayout: post\ntitle: ' + title + '\n---\n' + contentMarkdown;
 
 
 
@@ -683,7 +683,7 @@ var updateGithubPost = function(userId, githubSha, note, callback){
   var title = note.title;
 
   // console.log('createGithubPost ' + title + ' ' + contentHtml);
-  contentMarkdown += '---\nlayout: post\ntitle: ' + title + '\n---\n' + contentMarkdown;
+  contentMarkdown = '---\nlayout: post\ntitle: ' + title + '\n---\n' + contentMarkdown;
 
   // var date = new Date(note.created);
   var date = new Date();
