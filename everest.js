@@ -776,6 +776,7 @@ app.get('/evernote/webhook', function(req, res){
 
     if (err) {
       console.log('Can not find user ' + userId);
+      res.end('');
       return;
     }
 
@@ -786,8 +787,10 @@ app.get('/evernote/webhook', function(req, res){
     } else if (reason == 'update') {
       addGitOperation('update', user, noteGuid);
     }
-
+    
+    res.end('', 200);
   });  
+
 
 });
 
