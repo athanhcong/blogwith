@@ -134,7 +134,7 @@ app.all('/', function(req, res, next) {
 // Welcom Page
 app.get('/', function(req, res){
 	
-  console.log("app.get / " + req.session);
+  console.log("app.get / " + req + ' ' + req.session);
 	if(!req.session.user) //Unauthenticate User
 		return res.redirect('/login');
 
