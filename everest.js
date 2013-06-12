@@ -4,14 +4,11 @@ const KEY = 'express.sid'
   , GITHUB_CLIENT_SECRET = '910f3c346e97c8bdfccbb9001d7b010f1ce6a0e3'
   ;
 
-
-var GlobalConfig = require('./config.js');
-global.config = new GlobalConfig();
+global.config = new require('./config.js')();
 var config = global.config;
 
 console.log("Starting with configuration");
 console.log(global.config);
-
 
 var util = require('util');
 var querystring = require('querystring');
@@ -53,11 +50,10 @@ if (process.env.REDISTOGO_URL) {
 };
 
 var RedisStore = require('connect-redis')(express)
-  // , connect = require('connect')
-  // , store = new RedisStore({
-  //   client: redisClient,
-  // })
-  , store = new express.session.MemoryStore()
+  , store = new RedisStore({
+    client: redisClient,
+  })
+  // , store = new express.session.MemoryStore()
   , session = express.session({secret: SECRET
                              , key: KEY
                              , store: store
