@@ -102,7 +102,7 @@ app.configure('development', function(){
 
 	app.use(express.static(__dirname + "/public"));
 	//Use session
-  app.use(app.router);
+  // app.use(app.router);
 
 	app.use(session);
 
