@@ -88,9 +88,15 @@ var ghme   = githubClient.me();
 
 var Repo = github.repo;
 
+var repositoryName = process.env.BLOG_REPOSITORY;
+
+if (!repositoryName) {
+  repositoryName = "testblog";
+};
+
 Repo.prototype.contentsCreate = function(filename, content, cb) {
 
-  var path = filename;
+  var path = '_posts/' + filename;
 
   var contentInBase64 = new Buffer(content).toString('base64');
 
@@ -121,7 +127,7 @@ Repo.prototype.contentsCreate = function(filename, content, cb) {
 
 Repo.prototype.contentsUpdate = function(filename, sha, content, cb) {
 
-  var path = filename;
+  var path = '_posts/' + filename;
 
   var contentInBase64 = new Buffer(content).toString('base64');
 
@@ -154,7 +160,9 @@ Repo.prototype.contentsUpdate = function(filename, sha, content, cb) {
 
 
 var ghme   = githubClient.me();
-var ghrepo = githubClient.repo('athanhcong/testblog');
+var ghrepo = githubClient.repo('athanhcong/' + repositoryName);
+
+console.log('RepositoryName: ' + repositoryName);
 
 // Store info to verify against CSRF
 var state = auth_url.match(/&state=([0-9a-z]{32})/i);
@@ -173,7 +181,6 @@ app.configure(function(){
   app.use(express.methodOverride());
 
   app.use(session);
-
 
 	app.use(express.static(__dirname + "/public"));
 	//Use session
@@ -787,7 +794,7 @@ app.get('/evernote/webhook', function(req, res){
     } else if (reason == 'update') {
       addGitOperation('update', user, noteGuid);
     }
-    
+
     res.end('', 200);
   });  
 
