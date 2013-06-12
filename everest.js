@@ -82,7 +82,7 @@ app.configure('development', function(){
 	app.use(express.bodyParser());
 	
 	//Use static files
-	app.use("/website", express.static(__dirname + "/public"));
+	app.use(express.static(__dirname + "/public"));
 	//Use session
 	app.use(session);
 });
