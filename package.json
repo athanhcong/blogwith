@@ -10,6 +10,7 @@
     , "thrift" : "latest"
     , "enml-js" : "latest"
     , "ejs": "latest"
+    , "html" : "latest"
 
   },
   "engines": {
