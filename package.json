@@ -12,7 +12,7 @@
     , "enml-js" : "latest"
     , "ejs": "latest"
     , "html" : "latest"
-
+    , "html-md" : "latest"
   },
   "engines": {
     "node": "0.8.14"

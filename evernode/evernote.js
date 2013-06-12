@@ -105,6 +105,61 @@ Evernote.prototype.findNotes = function(user, words, option, callback)
 }
 
 /**
+ * findNotes
+ * @param  { EdamUser } user
+ * @param  { String }		words
+ * @param  { Option (optional) } option
+		- offset
+		- count
+		- sortOrder
+		- ascending
+		- inactive
+ * @param  { function (err, EDAMNoteList ) } callback
+ */
+Evernote.prototype.findNotesMetadata = function(user, notebookGuid, words, option, callback)
+{
+	if(arguments.length < 4){
+		callback = option;
+		option = {};
+	}
+	
+	if(!user || !user.shardId || !user.authToken) throw 'Argument Execption';
+	callback = callback || function (){}
+	
+	var noteStore = this.createNoteStore(user.shardId);
+	var noteFilter = new NoteStoreTypes.NoteFilter();
+	
+	noteFilter.words = words || '';
+	noteFilter.order = Types.NoteSortOrder[(option.sortOrder || 'UPDATED')];
+	noteFilter.ascending = option.ascending || false;
+	noteFilter.inactive = option.inactive || false;
+	noteFilter.notebookGuid = notebookGuid || false
+	
+	var offset = option.offset || 0;
+	var count = option.count || 50;
+
+	var notesMetadataResultSpec = new NoteStoreTypes.NotesMetadataResultSpec();
+
+	notesMetadataResultSpec.includeTitle = true;
+	notesMetadataResultSpec.includeCreated = true;
+	notesMetadataResultSpec.includeUpdated = true;
+	notesMetadataResultSpec.includeUpdateSequenceNum = null;
+
+  notesMetadataResultSpec.includeContentLength = true;
+  notesMetadataResultSpec.includeUpdateSequenceNum = true;
+  notesMetadataResultSpec.includeNotebookGuid = true;
+  notesMetadataResultSpec.includeTagGuids = true;
+  notesMetadataResultSpec.includeAttributes = true;
+  notesMetadataResultSpec.includeLargestResourceMime = true;
+  notesMetadataResultSpec.includeLargestResourceSize = true;
+
+	
+	noteStore.findNotesMetadata(user.authToken, noteFilter, offset, count, notesMetadataResultSpec,  function(err, response) {
+    callback(err, response)
+  });
+}
+
+/**
  * getNote
  * @param  { EdamUser } user
  * @param  { String }		guid
