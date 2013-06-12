@@ -50,9 +50,10 @@ if (process.env.REDISTOGO_URL) {
 
 var RedisStore = require('connect-redis')(express)
   // , connect = require('connect')
-  , store = new RedisStore({
-    client: redisClient,
-  })
+  // , store = new RedisStore({
+  //   client: redisClient,
+  // })
+  , store = new express.session.MemoryStore()
   , session = express.session({secret: SECRET
                              , key: KEY
                              , store: store
