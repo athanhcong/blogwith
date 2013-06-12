@@ -9,9 +9,11 @@
     , "octonode" : "latest"
     , "thrift" : "latest"
     , "enml-js" : "latest"
+    , "ejs": "latest"
+
   },
   "engines": {
-    "node": "latest"
-    , "npm": "latest"
+    "node": "0.8.x"
+    , "npm": "1.1.x"
   }
 }

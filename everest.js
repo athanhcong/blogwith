@@ -82,6 +82,10 @@ app.configure('development', function(){
 	app.use(express.bodyParser());
 	
 	//Use static files
+
+  app.set('views', __dirname + '/views');
+  app.engine('html', require('ejs').renderFile);
+
 	app.use(express.static(__dirname + "/public"));
 	//Use session
 	app.use(session);
@@ -110,11 +114,18 @@ app.get('/', function(req, res){
 	
   console.log("app.get /");
 	if(!req.session || !req.session.user) //Unauthenticate User
-		return res.redirect('/website/login.html');
+		return res.redirect('/website/login');
 		
-	return res.redirect('/website/index.html');
+	return res.redirect('/website/index');
 });
 
+app.get("/website/login", function (req, res) {
+  res.render("login.html");
+});
+
+app.get("/website/index", function (req, res) {
+  res.render("index.html");
+});
 //===================================================
 //								Authentications
 //===================================================
