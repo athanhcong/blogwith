@@ -36,7 +36,7 @@ if (process.env.REDISTOGO_URL) {
   var rtg   = require("url").parse(process.env.REDISTOGO_URL);
   redisClient = redis.createClient(rtg.port, rtg.hostname);
 
-  redis.auth(rtg.auth.split(":")[1]); 
+  redisClient.auth(rtg.auth.split(":")[1]); 
 
   console.log ('Config RedisToGo');
   
