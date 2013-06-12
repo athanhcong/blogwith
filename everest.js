@@ -7,14 +7,19 @@ const KEY = 'express.sid'
 
 
 
-global.config = require('./config.js');
+var GlobalConfig = require('./config.js');
+global.config = new GlobalConfig();
+
+console.log(global.config);
 
 var util = require('util');
 var querystring = require('querystring');
 var express = require('express');
 var config = global.config;
 
-var app = express.createServer();
+var app = express()
+  , http = require('http')
+  , server = http.createServer(app);
 
 // Create an Evernote instance
 var Evernote = require('./evernode').Evernote;
@@ -26,8 +31,8 @@ var evernote = new Evernote(
 
 var  redis = require('redis')
   , redisClient = redis.createClient()
-  // , connect = require('connect')
   , RedisStore = require('connect-redis')(express)
+  // , connect = require('connect')
   , store = new RedisStore({
     client: redisClient,
   })
@@ -621,6 +626,6 @@ app.get('/sync-chunk', function(req, res){
   });
 });
 
-app.listen(config.serverPort);
-
-console.log("Listening on port " + config.serverPort);
+server.listen(config.serverPort, function(){
+  console.log("Express server listening on port " + config.serverPort)
+})
