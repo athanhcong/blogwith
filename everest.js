@@ -13,11 +13,10 @@ console.log("Starting with configuration");
 console.log(global.config);
 
 
-
 var util = require('util');
 var querystring = require('querystring');
 var express = require('express')
-  , connect = require('connect')
+  // , connect = require('connect')
   , http = require('http');
 
 
