@@ -89,16 +89,20 @@ var ghme   = githubClient.me();
 var state = auth_url.match(/&state=([0-9a-z]{32})/i);
 
 //Setup ExpressJS
-app.configure('development', function(){
+app.configure(function(){
+
+  //Use static files
+  app.set('views', __dirname + '/views');
+  app.engine('html', require('ejs').renderFile);
+
 
 	app.use(express.cookieParser()); 
 	app.use(express.bodyParser());
+
+  app.use(express.methodOverride());
+
   app.use(session);
 
-	//Use static files
-
-  app.set('views', __dirname + '/views');
-  app.engine('html', require('ejs').renderFile);
 
 	app.use(express.static(__dirname + "/public"));
 	//Use session
