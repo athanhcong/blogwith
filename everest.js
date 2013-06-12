@@ -34,9 +34,13 @@ var redisClient;
 if (process.env.REDISTOGO_URL) {
   // TODO: redistogo connection
   var rtg   = require("url").parse(process.env.REDISTOGO_URL);
+  console.log ('Config RedisToGo: rtg', JSON.stringify(rtg));
   redisClient = redis.createClient(rtg.port, rtg.hostname);
 
-  redisClient.auth(rtg.auth.split(":")[1]); 
+  console.log ('Config RedisToGo: rtg.auth', JSON.stringify(rtg.auth.split(":")[1]));
+  redisClient.auth(rtg.auth.split(":")[1], function(data) {
+    console.log ('Config RedisToGo: callback.auth', JSON.stringify(data));
+  }); 
 
   console.log ('Config RedisToGo');
 
