@@ -29,9 +29,22 @@ var evernote = new Evernote(
 		config.evernoteUsedSandbox
 		);
 
-var  redis = require('redis')
-  , redisClient = redis.createClient()
-  , RedisStore = require('connect-redis')(express)
+var  redis = require('redis');
+var redisClient;
+if (process.env.REDISTOGO_URL) {
+  // TODO: redistogo connection
+  var rtg   = require("url").parse(process.env.REDISTOGO_URL);
+  redisClient = redis.createClient(rtg.port, rtg.hostname);
+
+  redis.auth(rtg.auth.split(":")[1]); 
+
+  console.log ('Config RedisToGo');
+  
+} else {
+  redisClient = redis.createClient()
+};
+
+var RedisStore = require('connect-redis')(express)
   // , connect = require('connect')
   , store = new RedisStore({
     client: redisClient,
