@@ -2,10 +2,13 @@
   "name": "everest-js",
   "version": "0.0.1",
   "dependencies": {
-    "redis" : "latest"
+    "express" : "latest"
+    , "oauth" : "latest"
+    , "redis" : "latest"
     , "connect-redis" : "latest"
     , "octonode" : "latest"
-
+    , "thrift" : "latest"
+    , "enml-js" : "latest"
   },
   "engines": {
     "node": "0.8.x"

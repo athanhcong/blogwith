@@ -47,6 +47,13 @@ var auth_url = github.auth.config({
   secret: GITHUB_CLIENT_SECRET
 }).login(['user', 'repo', 'gist']);
 
+
+var githubClient = github.client({
+  id: GITHUB_CLIENT_ID,
+  secret: GITHUB_CLIENT_SECRET
+});
+var ghme   = githubClient.me();
+
 // Store info to verify against CSRF
 var state = auth_url.match(/&state=([0-9a-z]{32})/i);
 
@@ -63,11 +70,11 @@ app.configure('development', function(){
 	app.use(session);
 });
 
-app.dynamicHelpers({
-  session: function(req, res){
-    return req.session;
-  }
-});
+// app.dynamicHelpers({
+//   session: function(req, res){
+//     return req.session;
+//   }
+// });
 
 //Allow X-Domain Ajax
 app.all('/', function(req, res, next) {
@@ -124,7 +131,10 @@ app.all('/authentication/callback', function(req, res){
 				
 				req.session.authToken = authToken;
 				req.session.user = edamUser;
-				
+
+	      var userId = req.session.user.id;
+        redisClient.sadd('users:' + userId, userId);
+
 				res.redirect('/');
 			});
   });
@@ -136,7 +146,6 @@ app.get('/github/authentication', function(req, res){
   res.writeHead(301, {'Content-Type': 'text/plain', 'Location': auth_url})
   res.end('Redirecting to ' + auth_url);
 });
-
 
 app.all('/github/authentication/callback', function(req, res){
   console.log("github/authentication/callback");
@@ -150,11 +159,102 @@ app.all('/github/authentication/callback', function(req, res){
     github.auth.login(values.code, function (err, token) {
       console.log("github/authentication/callback " + err + ' ' + token);
       // res.writeHead(200, {'Content-Type': 'text/plain'});
-      req.session.github = {'authToken': token};
-      res.redirect('/');
+
+      var userId = req.session.user.id;
+
+      redisClient.set('users:' + userId + ':github:authToken', token);
+
+      req.session.github = {};
+      req.session.github.authToken = token;
+      githubClient.token = token;
+      ghme.info(function(err, data) {
+        console.log("error: " + err);
+        console.log("data: " + data);
+
+        redisClient.set('users:' + userId + ':github:user', JSON.stringify(data));
+        res.redirect('/');
+      });
+      
     });
   // }
 });
+
+
+
+
+/////////////////
+
+
+
+app.get('/evernote/create-notebook', function(req, res){
+  console.log("/evernote/create-notebook");
+
+
+
+  if(!req.session.user) return res.send('Unauthenticate',401);
+  if(!req.body) return res.send('Invalid content',400);
+  
+  var userId = req.session.user.id;
+
+  var notebook = redisClient.get('users:' + userId + ':evernote:notebook', function(err, notebook){
+    if (notebook) {
+      console.log(JSON.stringify(notebook));
+    } else {
+      console.log("No notebook. Creating one");
+      var notebook = {"name": "Blog with Evernote"};
+      var userInfo = req.session.user;
+  
+      evernote.createNotebook(userInfo, notebook, function(err, data) {
+        console.log("Creating " + err + ' ' + JSON.stringify(data));
+        if (err) {
+          if(err == 'EDAMUserException') return res.send(err,403);
+          return res.send(err,500);
+        } else {
+          redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
+        }
+      });
+    }
+    return res.redirect('/');
+
+  });
+});
+
+
+app.get('/evernote/sync', function(req, res){
+  console.log("/evernote/create-notebook");
+
+  if(!req.session.user) return res.send('Unauthenticate',401);
+  if(!req.body) return res.send('Invalid content',400);
+
+  // Check notebook
+  var userId = req.session.user.id;
+  var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, data){
+    if(!data) return res.send('Can not find notebook',400);
+
+    // Get all notes
+    var notebook = JSON.parse(data);
+  
+    console.log("Retrieve change from notebook " + notebook.name);
+    
+    // evernote.createNotebook(userInfo, notebook, function(err, data) {
+    //   console.log("Creating " + err + ' ' + JSON.stringify(data));
+    //   if (err) {
+    //     if(err == 'EDAMUserException') return res.send(err,403);
+    //     return res.send(err,500);
+    //   } else {
+    //     redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
+    //   }
+    // });
+    return res.redirect('/');
+
+  });
+
+  console.log("Retrieve notebook " + JSON.stringify(result));
+});
+
+
+
+/////////
 
 
 app.all('/logout', function(req, res){
