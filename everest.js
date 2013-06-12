@@ -39,7 +39,7 @@ if (process.env.REDISTOGO_URL) {
   redisClient.auth(rtg.auth.split(":")[1]); 
 
   console.log ('Config RedisToGo');
-  
+
 } else {
   redisClient = redis.createClient()
 };
@@ -96,6 +96,7 @@ app.configure('development', function(){
 
 //Allow X-Domain Ajax
 app.all('/', function(req, res, next) {
+  console.log("app.all /");
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "X-Requested-With");
   next();
@@ -108,7 +109,8 @@ app.all('/', function(req, res, next) {
 // Welcom Page
 app.get('/', function(req, res){
 	
-	if(!req.session.user) //Unauthenticate User
+  console.log("app.get /");
+	if(!req.session || !req.session.user) //Unauthenticate User
 		return res.redirect('/website/login.html');
 		
 	return res.redirect('/website/index.html');
