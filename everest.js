@@ -103,7 +103,14 @@ app.configure('development', function(){
 	app.use(express.static(__dirname + "/public"));
 	//Use session
   app.use(app.router);
+
 	app.use(session);
+
+
+  app.use(function(req, res, next){
+    res.locals.session = req.session;
+    next();
+  });
 });
 
 // app.dynamicHelpers({
@@ -127,7 +134,7 @@ app.all('/', function(req, res, next) {
 // Welcom Page
 app.get('/', function(req, res){
 	
-  console.log("app.get /");
+  console.log("app.get / " + req.session);
 	if(!req.session.user) //Unauthenticate User
 		return res.redirect('/login');
 
