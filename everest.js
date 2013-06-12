@@ -90,11 +90,11 @@ var state = auth_url.match(/&state=([0-9a-z]{32})/i);
 
 //Setup ExpressJS
 app.configure('development', function(){
-  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 
 	app.use(express.cookieParser()); 
 	app.use(express.bodyParser());
-	
+  app.use(session);
+
 	//Use static files
 
   app.set('views', __dirname + '/views');
@@ -104,13 +104,15 @@ app.configure('development', function(){
 	//Use session
   // app.use(app.router);
 
-	app.use(session);
 
 
   app.use(function(req, res, next){
     res.locals.session = req.session;
     next();
   });
+
+  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+
 });
 
 // app.dynamicHelpers({
