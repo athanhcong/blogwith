@@ -266,7 +266,7 @@ app.all('/authentication/callback', function(req, res){
 
 	      var userId = req.session.user.id;
         redisClient.sadd('users:' + userId, userId);
-
+        redisClient.set('users:' + userId + ':evernote:user', JSON.stringify(req.session.user));
 				res.redirect('/');
 			});
   });
@@ -479,224 +479,7 @@ app.get('/evernote/notes', function(req, res){
     redisClient.set('users:' + userId + ':evernote:notesMetadata', JSON.stringify(notesMetadata));
   };
 
-  var gitOperations = [];
-  var isGitInOperation = false;
-  var addGitOperation = function (type, userInfo, note) {
-    gitOperations.push({'type': type, 'userInfo': userInfo, 'note': note});
 
-    startGitOperation();
-  }
-  var startGitOperation = function () {
-    console.log("startGitOperation");
-
-    if (!isGitInOperation && gitOperations.length > 0) {
-      var operation = gitOperations.shift();
-      var operator;
-      if (operation.type == 'create') {
-        operator = createPostWithMetadata;
-      } else {
-        operator = updatePostWithMetadata;
-      }
-
-      isGitInOperation = true;
-      operator(operation.userInfo, operation.note, function (err, data) {
-        isGitInOperation = false;
-        startGitOperation(); // recursive
-      });  
-    };
-  }
-
-  var checkUpdateForPost = function(userInfo, note) {
-    var userId = userInfo.id;
-    var result = redisClient.get('users:' + userId + ':posts:' + note.guid + ':updated', function(err, updated) {
-
-      console.log('get updated for ' + note.guid + ': ' + updated);
-
-      if (!updated) {
-        console.log('New post: ' + note.title);
-        // return 'create';
-
-        // createPostWithMetadata(userInfo, note);
-        addGitOperation('create', userInfo, note);
-
-      } else if (note.updated != updated) {
-        // update note
-        console.log('Update post: ' + note.title);
-        // return 'update';
-        // updatePostWithMetadata(userInfo, note);
-        addGitOperation('update', userInfo, note);
-      } else {
-        console.log('Old post: ' + note.title);
-        return null;
-      };
-    });
-  }
-
-  var createPostWithMetadata = function(userInfo, metadata, callback) {
-    // console.log('createPostWithMetadata');
-
-    var guid = metadata.guid;
-
-    evernote.getNote(userInfo, guid, {}, function(err, note) {
-      
-      if (err) {
-        callback(err);
-        return;
-      }
-
-      console.log('Get note for creating: ' + note.title);
-
-
-      createGithubPost(userInfo, note, function(err, data) {
-        callback(err, data);
-      });
-    });
-  }
-
-  var updatePostWithMetadata = function(userInfo, metadata, callback) {
-    // console.log('updatePostWithMetadata');
-
-    var guid = metadata.guid;
-
-    evernote.getNote(userInfo, guid, {}, function(err, note) {
-      
-      if (err) {
-        callback(err);
-        return;
-      }
-
-      console.log('Get note for updating: ' + note.title);
-      // redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
-      var userId = userInfo.id;
-      var result = redisClient.get('users:' + userId + ':posts:' + guid + ':githubData', function(err, data) {
-        // console.log('Database: ' + 'users:' + userId + ':posts:' + guid + ':githubData' + ': '+ data);  
-        if (err) {
-          callback(err);
-          return;
-        };
-
-        if (data) {
-          var githubCommit = JSON.parse(data);
-          var sha = githubCommit.content.sha;
-          console.log('Updating github file with SHA: ' + sha);  
-          updateGithubPost(userInfo, sha , note, function(err, data) {
-            callback(err, data);
-          });          
-        } else {
-          console.log('Can not find github sha. Create instead');
-          
-          createGithubPost(userInfo, note, function(err, data) {
-            callback(err, data);
-          });
-        };
-
-
-      });
-    });
-  }
-
-  var initBlogWithNotesMetadata = function(req, res, notesMetadata) {
-    console.log('initBlogWithNotesMetadata');
-    var notes = notesMetadata.notes;
-    for (var i = 0; i < notes.length; i++) {
-      var metadata = notes[i];
-      addGitOperation('create', req.session.user, metadata);
-    };
-  }
-
-  var createGithubPost = function(user, note, callback){
-
-    var contentHtml = enml.HTMLOfENML(note.content);
-    var contentMarkdown = md(contentHtml);
-    var title = note.title;
-
-
-    // var date = new Date(note.created);
-    var date = new Date();
-    var timestamp = new Date().getTime();
-
-    var titleFilename = title.toLowerCase().split(' ').join('-');
-    var filename = date.getFullYear() + '-' + date.getMonth().pad(2) + '-' + date.getDay().pad(2) + '-' + titleFilename + '.md';
-    // var content = "Yeah this is cool";
-    // filename = timestamp + filename;
-
-    console.log('createGithubPost ' + filename + ' ' + contentMarkdown);
-
-    var result = redisClient.get('users:' + user.id + ':github:authToken', function(err, data) {
-
-      if (err) {
-        callback(err);
-        return;
-      };
-
-      githubClient.token = data;
-      ghrepo.contentsCreate(filename, contentMarkdown, function(err, data) {
-        console.log("Git create: " + filename + " - Error: " + err + " - Data: " + data);
-        // console.log("error: " + err);
-        // console.log("data: " + JSON.stringify(data));
-
-        // Save to database
-        if (err) {
-        } else if (data) {
-          var guid = note.guid;
-          redisClient.set('users:' + userId + ':posts:' + guid + ':note', JSON.stringify(note));
-          redisClient.set('users:' + userId + ':posts:' + guid + ':updated', note.updated);
-          redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
-        };
-
-        // Callback
-        callback(err, data);
-      });
-    });
-  };
-
-
-
-  // Update a file in github
-  var updateGithubPost = function(user, githubSha, note, callback){
-
-    var contentHtml = enml.HTMLOfENML(note.content);
-    var contentMarkdown = md(contentHtml);
-    var title = note.title;
-
-    // console.log('createGithubPost ' + title + ' ' + contentHtml);
-
-
-    // var date = new Date(note.created);
-    var date = new Date();
-    var timestamp = new Date().getTime();
-
-    var titleFilename = title.toLowerCase().split(' ').join('-');
-    var filename = date.getFullYear() + '-' + date.getMonth().pad(2) + '-' + date.getDay().pad(2) + '-' + titleFilename + '.md';
-    // var content = "Yeah this is cool";
-    // filename = timestamp + filename;
-
-    console.log('updateGithubPost ' + filename + ' ' + contentMarkdown);
-
-    var result = redisClient.get('users:' + user.id + ':github:authToken', function(err, data) {
-
-      if (err) {
-        return callback(err);
-      };
-
-      githubClient.token = data;
-      ghrepo.contentsUpdate(filename, githubSha, contentMarkdown, function(err, data) {
-        console.log("Git update: " + filename + " - Error: " + err + " - Data: " + data);
-        // Save to database
-        if (err) {
-
-        } else if (data) {
-          var guid = note.guid;
-          redisClient.set('users:' + userId + ':posts:' + guid + ':note', JSON.stringify(note));
-          redisClient.set('users:' + userId + ':posts:' + guid + ':updated', note.updated);
-          redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
-        };
-
-        // Callback
-        callback(err, data);
-      });
-    });
-  };
 
 
 
@@ -712,6 +495,221 @@ app.get('/evernote/notes', function(req, res){
 
 //////////////
 
+
+var gitOperations = [];
+var isGitInOperation = false;
+var addGitOperation = function (type, userInfo, noteGuid) {
+  gitOperations.push({'type': type, 'userInfo': userInfo, 'noteGuid': noteGuid});
+
+  startGitOperation();
+}
+var startGitOperation = function () {
+  console.log("startGitOperation");
+
+  if (!isGitInOperation && gitOperations.length > 0) {
+    var operation = gitOperations.shift();
+    var operator;
+    if (operation.type == 'create') {
+      operator = createPostWithMetadata;
+    } else {
+      operator = updatePostWithMetadata;
+    }
+
+    isGitInOperation = true;
+    operator(operation.userInfo, operation.noteGuid, function (err, data) {
+      isGitInOperation = false;
+      startGitOperation(); // recursive
+    });  
+  };
+}
+
+var checkUpdateForPost = function(userInfo, note) {
+  var userId = userInfo.id;
+  var result = redisClient.get('users:' + userId + ':posts:' + note.guid + ':updated', function(err, updated) {
+
+    console.log('get updated for ' + note.guid + ': ' + updated);
+
+    if (!updated) {
+      console.log('New post: ' + note.title);
+      // return 'create';
+
+      // createPostWithMetadata(userInfo, note);
+      addGitOperation('create', userInfo, note.guid);
+
+    } else if (note.updated != updated) {
+      // update note
+      console.log('Update post: ' + note.title);
+      // return 'update';
+      // updatePostWithMetadata(userInfo, note);
+      addGitOperation('update', userInfo, note.guid);
+    } else {
+      console.log('Old post: ' + note.title);
+      return null;
+    };
+  });
+}
+
+var createPostWithMetadata = function(userInfo, noteGuid, callback) {
+  // console.log('createPostWithMetadata');
+
+  evernote.getNote(userInfo, noteGuid, {}, function(err, note) {
+    
+    if (err) {
+      callback(err);
+      return;
+    }
+
+    console.log('Get note for creating: ' + note.title);
+
+
+    createGithubPost(userInfo.id, note, function(err, data) {
+      callback(err, data);
+    });
+  });
+}
+
+var updatePostWithMetadata = function(userInfo, noteGuid, callback) {
+  // console.log('updatePostWithMetadata');
+
+  evernote.getNote(userInfo, noteGuid, {}, function(err, note) {
+    
+    if (err) {
+      callback(err);
+      return;
+    }
+
+    console.log('Get note for updating: ' + note.title);
+    // redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
+    var userId = userInfo.id;
+    var result = redisClient.get('users:' + userId + ':posts:' + note.guid + ':githubData', function(err, data) {
+      // console.log('Database: ' + 'users:' + userId + ':posts:' + guid + ':githubData' + ': '+ data);  
+      if (err) {
+        callback(err);
+        return;
+      };
+
+      if (data) {
+        var githubCommit = JSON.parse(data);
+        var sha = githubCommit.content.sha;
+        console.log('Updating github file with SHA: ' + sha);  
+        updateGithubPost(userInfo.id, sha , note, function(err, data) {
+          callback(err, data);
+        });          
+      } else {
+        console.log('Can not find github sha. Create instead');
+        
+        createGithubPost(userInfo.id, note, function(err, data) {
+          callback(err, data);
+        });
+      };
+
+
+    });
+  });
+}
+
+var initBlogWithNotesMetadata = function(req, res, notesMetadata) {
+  console.log('initBlogWithNotesMetadata');
+  var notes = notesMetadata.notes;
+  for (var i = 0; i < notes.length; i++) {
+    var metadata = notes[i];
+    addGitOperation('create', req.session.user, metadata);
+  };
+}
+
+var createGithubPost = function(userId, note, callback){
+
+  var contentHtml = enml.HTMLOfENML(note.content);
+  var contentMarkdown = md(contentHtml);
+  var title = note.title;
+
+
+  // var date = new Date(note.created);
+  var date = new Date();
+  var timestamp = new Date().getTime();
+
+  var titleFilename = title.toLowerCase().split(' ').join('-');
+  var filename = date.getFullYear() + '-' + date.getMonth().pad(2) + '-' + date.getDay().pad(2) + '-' + titleFilename + '.md';
+  // var content = "Yeah this is cool";
+  // filename = timestamp + filename;
+
+  console.log('createGithubPost ' + filename + ' ' + contentMarkdown);
+
+  var result = redisClient.get('users:' + userId + ':github:authToken', function(err, data) {
+
+    if (err) {
+      callback(err);
+      return;
+    };
+
+    githubClient.token = data;
+    ghrepo.contentsCreate(filename, contentMarkdown, function(err, data) {
+      console.log("Git create: " + filename + " - Error: " + err + " - Data: " + data);
+      // console.log("error: " + err);
+      // console.log("data: " + JSON.stringify(data));
+
+      // Save to database
+      if (err) {
+      } else if (data) {
+        var guid = note.guid;
+        redisClient.set('users:' + userId + ':posts:' + guid + ':note', JSON.stringify(note));
+        redisClient.set('users:' + userId + ':posts:' + guid + ':updated', note.updated);
+        redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
+      };
+
+      // Callback
+      callback(err, data);
+    });
+  });
+};
+
+
+
+// Update a file in github
+var updateGithubPost = function(userId, githubSha, note, callback){
+
+  var contentHtml = enml.HTMLOfENML(note.content);
+  var contentMarkdown = md(contentHtml);
+  var title = note.title;
+
+  // console.log('createGithubPost ' + title + ' ' + contentHtml);
+
+
+  // var date = new Date(note.created);
+  var date = new Date();
+  var timestamp = new Date().getTime();
+
+  var titleFilename = title.toLowerCase().split(' ').join('-');
+  var filename = date.getFullYear() + '-' + date.getMonth().pad(2) + '-' + date.getDay().pad(2) + '-' + titleFilename + '.md';
+  // var content = "Yeah this is cool";
+  // filename = timestamp + filename;
+
+  console.log('updateGithubPost ' + filename + ' ' + contentMarkdown);
+
+  var result = redisClient.get('users:' + userId + ':github:authToken', function(err, data) {
+
+    if (err) {
+      return callback(err);
+    };
+
+    githubClient.token = data;
+    ghrepo.contentsUpdate(filename, githubSha, contentMarkdown, function(err, data) {
+      console.log("Git update: " + filename + " - Error: " + err + " - Data: " + data);
+      // Save to database
+      if (err) {
+
+      } else if (data) {
+        var guid = note.guid;
+        redisClient.set('users:' + userId + ':posts:' + guid + ':note', JSON.stringify(note));
+        redisClient.set('users:' + userId + ':posts:' + guid + ':updated', note.updated);
+        redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
+      };
+
+      // Callback
+      callback(err, data);
+    });
+  });
+};
 
 
 // var getNote = function(req, res, guid, cb){
@@ -731,32 +729,68 @@ app.get('/evernote/notes', function(req, res){
 // });
 
 
-  app.get('/github/create', function(req, res){
-    console.log('/github/create');
-    if(!req.session.user) return res.send('Unauthenticate',401);
+app.get('/github/create', function(req, res){
+  console.log('/github/create');
+  if(!req.session.user) return res.send('Unauthenticate',401);
 
 
-    var date = '13-06-01';
-    var timestamp = new Date().getTime();
-    var title = '' + timestamp;
-    var filename = date + '-' + title + '.md';
-    var content = "Yeah this is cool";
+  var date = '13-06-01';
+  var timestamp = new Date().getTime();
+  var title = '' + timestamp;
+  var filename = date + '-' + title + '.md';
+  var content = "Yeah this is cool";
 
-    var userId = req.session.user.id;
+  var userId = req.session.user.id;
 
 
-    var result = redisClient.get('users:' + userId + ':github:authToken', function(err, data) {
-      console.log('got github token ' + data);
+  var result = redisClient.get('users:' + userId + ':github:authToken', function(err, data) {
+    console.log('got github token ' + data);
 
-      githubClient.token = data;
-      ghrepo.contentsCreate(title, content, function(err, data) {
-        console.log("error" + err + "data: " + data);
-        return res.send(data,200);
-      });
-
+    githubClient.token = data;
+    ghrepo.contentsCreate(title, content, function(err, data) {
+      console.log("error" + err + "data: " + data);
+      return res.send(data,200);
     });
 
   });
+
+});
+
+
+app.get('/evernote/webhook', function(req, res){
+  
+
+  var url_parts = url.parse(req.url, true);
+  var query = url_parts.query;
+  
+  var userId = query.userId;
+  var noteGuid = query.guid;
+  var reason = query.reason;
+
+  console.log('/evernote/webhook ' + userId + ' ' + noteGuid + ' ' + reason);
+
+
+  //redisClient.set('users:' + userId + ':evernote:user', JSON.stringify(req.session.user));
+
+  var result = redisClient.get('users:' + userId + ':evernote:user', function(err, data) {
+
+    if (err) {
+      console.log('Can not find user ' + userId);
+      return;
+    }
+
+    var user = JSON.parse(data);
+
+    if (reason == 'create') {
+      addGitOperation('create', user, noteGuid);
+    } else if (reason == 'update') {
+      addGitOperation('update', user, noteGuid);
+    }
+
+  });  
+
+});
+
 
 
 /////////
