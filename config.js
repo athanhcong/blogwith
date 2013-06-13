@@ -20,5 +20,7 @@ module.exports = function() {
       config['githubClientSecret'] = 'a026298fd821e95083fe4a1c9e640494088e741c';
   };
 
+  config['githubRepo'] = process.env.BLOG_REPOSITORY;
+
   return config;
 };

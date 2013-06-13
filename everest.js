@@ -67,7 +67,6 @@ var github = require('./lib/github')
   , url = require('url');
 
 
-var async = require('async');
 var flow = require('flow');
 
 //Setup ExpressJS
@@ -200,8 +199,12 @@ github.authenticationCallback = function(req, res, data, token) {
     console.log("error: " + err);
     console.log("data: " + data);
 
-    redisClient.set('users:' + userId + ':github:user', JSON.stringify(data));
-    res.redirect('/');
+    if (data) {
+      data.authToken = token;
+      redisClient.set('users:' + userId + ':github:user', JSON.stringify(data));
+      res.redirect('/');      
+    };
+
   });
 };
 
@@ -306,29 +309,24 @@ app.get('/evernote/sync', function(req, res){
     
     console.log('notebookGuid ' + notebookGuid);
 
-    evernote.findNotesMetadata(userInfo, notebookGuid, words, { offset:offset, count:count, sortOrder:sortOrder, ascending:ascending }, function(err, noteList) {
+    evernote.findNotesMetadata(userInfo, notebookGuid, words, 
+      { offset:offset, count:count, sortOrder:sortOrder, ascending:ascending }, 
+      function(err, noteList) {
       if (err) {
         if(err == 'EDAMUserException') return res.send(err,403);
         return res.send(err,500);
       } else {
-
-        
-      syncNotesMetadata(req, res, noteList, function(err, data){
-        return res.send(noteList,200);
-      });
-
-
       
+        syncNotesMetadata(req, res, noteList, function(err, data){
+          return res.send(noteList,200);
+        });
       }
     });
   });
 
 
-
-
   var syncNotesMetadata = function(req, res, notesMetadata, cb) {
     console.log('syncNotesMetadata');
-
 
     // Get old notesMetadata
     var userId = req.session.user.id;
@@ -344,8 +342,9 @@ app.get('/evernote/sync', function(req, res){
       var oldUpdateCount = oldNM.updateCount;
       var newUpdateCount = notesMetadata.updateCount;
       console.log('Compare updateCount ' + oldUpdateCount + ' vs ' + newUpdateCount);
-      
-      if (oldUpdateCount != newUpdateCount)  {
+
+      // if (oldUpdateCount != newUpdateCount)  
+      {
         // Generate old note hashtable
         // var oldNotes = oldNM.notes;
         // var oldNotesTable = {};
@@ -356,25 +355,20 @@ app.get('/evernote/sync', function(req, res){
         // };
 
         var newNotes = notesMetadata.notes;
-
-        // for (var i = 0; i < newNotes.length; i++) {
-        //   var note = newNotes[i];
-        //   checkUpdateForPost(req.session.user, note);
-        // }
         
         flow.serialForEach(newNotes, function(note) {
           checkUpdateForPost(req.session.user, note, this);
         },function() {
-          redisClient.set('users:' + userId + ':evernote:notesMetadata', JSON.stringify(notesMetadata));
-          console.log("DONE: syncNotesMetadata");
-          
-
+          // console.log("DONE: syncNotesMetadata");
         });
-        };
-      }
+      };
+    }
 
-      cb(null); // Callback
-    });
+
+    redisClient.set('users:' + userId + ':evernote:notesMetadata', JSON.stringify(notesMetadata));
+
+    cb(null); // Callback
+  });
 
   };
 
@@ -467,28 +461,28 @@ var updatePostWithMetadata = function(userInfo, noteGuid, callback) {
 
 var initBlogWithNotesMetadata = function(req, res, notesMetadata) {
   console.log('initBlogWithNotesMetadata');
-  var notes = notesMetadata.notes;
-  for (var i = 0; i < notes.length; i++) {
-    var metadata = notes[i];
-    addGitOperation('create', req.session.user, metadata);
-  };
+
+  var newNotes = notesMetadata.notes;
+        
+  flow.serialForEach(newNotes, function(note) {
+    checkUpdateForPost(req.session.user, note, this);
+  },function() {
+    // console.log("DONE: syncNotesMetadata");
+  });
 }
 
 var createGithubPost = function(userId, note, callback){
 
-  var result = redisClient.get('users:' + userId + ':github:authToken', function(err, data) {
-
+  githubRepoWithUserId(userId, function(err, repo) {
 
     if (err) {
       callback(err);
       return;
     };
 
-    var _ghClient = github.apiClient();
-    _ghClient.token = data;
-    var _ghRepo = _ghClient.repo('athanhcong/testblog', _ghClient);
+    console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
 
-    _ghRepo.createGithubPost(note, function(err, data) {
+    repo.createGithubPost(note, function(err, data) {
       // Save to database
       if (err) {
       } else if (data) {
@@ -504,23 +498,18 @@ var createGithubPost = function(userId, note, callback){
   });
 };
 
-
-
-
 // Update a file in github
 var updateGithubPost = function(userId, githubSha, note, callback){
 
-  var result = redisClient.get('users:' + userId + ':github:authToken', function(err, data) {
-
+  githubRepoWithUserId(userId, function(err, repo) {
     if (err) {
-      return callback(err);
+      callback(err);
+      return;
     };
 
-    var _ghClient = github.apiClient();
-    _ghClient.token = data;
-    var _ghRepo = _ghClient.repo('athanhcong/testblog', _ghClient);
+    console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
 
-    _ghRepo.updateGithubPost(githubSha, note, function(err, data) {
+    repo.updateGithubPost(githubSha, note, function(err, data) {
       // Save to database
       if (err) {
 
@@ -534,6 +523,36 @@ var updateGithubPost = function(userId, githubSha, note, callback){
     });
   });
 };
+
+var githubRepoWithUserId = function(userId, callback) {
+  var result = redisClient.get('users:' + userId + ':github:user', function(err, data) {
+
+    if (err) {
+      return callback(err);
+    };
+
+    var githubUser = JSON.parse(data);
+    var githubUsername = githubUser.login;
+
+    var githubRepoName = githubUsername + '.github.com';
+    if (config.githubRepo) {
+      githubRepoName = config.githubRepo;
+    };
+
+    githubRepoName = githubUsername + '/' + githubRepoName;
+
+    var _ghClient = github.apiClient();
+    _ghClient.token = githubUser.authToken;
+    var _ghRepo = _ghClient.repo(githubRepoName);
+
+    callback(null, _ghRepo);
+
+  });
+};
+
+
+
+/////////////////////////////////////////
 
 
 app.get('/github/create', function(req, res){
