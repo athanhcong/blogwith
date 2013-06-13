@@ -67,17 +67,8 @@ var github = require('./lib/github')
   , url = require('url');
 
 
-
-
-
-var repositoryName = process.env.BLOG_REPOSITORY;
-
-var githubClient = github.apiClient();
-var ghme   = githubClient.me();
-var ghrepo = githubClient.repo('athanhcong/' + repositoryName);
-
-console.log('RepositoryName: ' + repositoryName);
-
+var async = require('async');
+var flow = require('flow');
 
 //Setup ExpressJS
 app.configure(function(){
@@ -202,9 +193,10 @@ github.authenticationCallback = function(req, res, data, token) {
 
   req.session.github = {};
   req.session.github.authToken = token;
-  githubClient.token = token;
   
-  ghme.info(function(err, data) {
+  var _ghClient = github.apiClient();
+  _ghClient.token = token;
+  _ghClient.me().info(function(err, data) {
     console.log("error: " + err);
     console.log("data: " + data);
 
@@ -212,8 +204,6 @@ github.authenticationCallback = function(req, res, data, token) {
     res.redirect('/');
   });
 };
-
-
 
 
 /////////////////
@@ -324,8 +314,10 @@ app.get('/evernote/sync', function(req, res){
 
         
       syncNotesMetadata(req, res, noteList, function(err, data){
-        return res.send(noteList,200);  
+        return res.send(noteList,200);
       });
+
+
       
       }
     });
@@ -343,52 +335,48 @@ app.get('/evernote/sync', function(req, res){
 
     var result = redisClient.get('users:' + userId + ':evernote:notesMetadata', function(err, oldNMData) {
 
-      if (!oldNMData) {
-        // No notesMetadata before
-        initBlogWithNotesMetadata(req, res, notesMetadata);
-      } else {
-        oldNM = JSON.parse(oldNMData);
+    if (!oldNMData) {
+      // No notesMetadata before
+      initBlogWithNotesMetadata(req, res, notesMetadata);
+    } else {
+      oldNM = JSON.parse(oldNMData);
 
-        var oldUpdateCount = oldNM.updateCount;
-        var newUpdateCount = notesMetadata.updateCount;
-        console.log('Compare updateCount ' + oldUpdateCount + ' vs ' + newUpdateCount);
-        // if (oldUpdateCount != newUpdateCount) 
-        {
-          // Generate old note hashtable
-          // var oldNotes = oldNM.notes;
-          // var oldNotesTable = {};
-          // for (var i = 0; i < oldNotes.length; i++) {
-          //   var note = oldNotes[i];
-          //   oldNotesTable[note.guid] = note.updated;
+      var oldUpdateCount = oldNM.updateCount;
+      var newUpdateCount = notesMetadata.updateCount;
+      console.log('Compare updateCount ' + oldUpdateCount + ' vs ' + newUpdateCount);
+      
+      if (oldUpdateCount != newUpdateCount)  {
+        // Generate old note hashtable
+        // var oldNotes = oldNM.notes;
+        // var oldNotesTable = {};
+        // for (var i = 0; i < oldNotes.length; i++) {
+        //   var note = oldNotes[i];
+        //   oldNotesTable[note.guid] = note.updated;
 
-          // };
+        // };
 
-          var newNotes = notesMetadata.notes;
+        var newNotes = notesMetadata.notes;
 
-          for (var i = 0; i < newNotes.length; i++) {
-            var note = newNotes[i];
+        // for (var i = 0; i < newNotes.length; i++) {
+        //   var note = newNotes[i];
+        //   checkUpdateForPost(req.session.user, note);
+        // }
+        
+        flow.serialForEach(newNotes, function(note) {
+          checkUpdateForPost(req.session.user, note, this);
+        },function() {
+          redisClient.set('users:' + userId + ':evernote:notesMetadata', JSON.stringify(notesMetadata));
+          console.log("DONE: syncNotesMetadata");
+          
 
-            checkUpdateForPost(req.session.user, note);
-          }
-
+        });
         };
-
       }
+
+      cb(null); // Callback
     });
 
-
-    cb(null); // Callback
-    redisClient.set('users:' + userId + ':evernote:notesMetadata', JSON.stringify(notesMetadata));
   };
-
-
-
-
-
-
-
-
-
 
 
 });
@@ -397,59 +385,23 @@ app.get('/evernote/sync', function(req, res){
 
 //////////////
 
-
-var gitOperations = [];
-var isGitInOperation = false;
-var addGitOperation = function (type, userInfo, noteGuid) {
-  gitOperations.push({'type': type, 'userInfo': userInfo, 'noteGuid': noteGuid});
-
-  startGitOperation();
-}
-var startGitOperation = function () {
-
-  if (!isGitInOperation && gitOperations.length > 0) {
-    var operation = gitOperations.shift();
-    var operator;
-    if (operation.type == 'create') {
-      operator = createPostWithMetadata;
-    } else {
-      operator = updatePostWithMetadata;
-    }
-
-    console.log("Perform GitOperation: " + operation.type + " - Note: " + operation.noteGuid);
-
-    // isGitInOperation = true;
-    operator(operation.userInfo, operation.noteGuid, function (err, data) {
-      isGitInOperation = false;
-      startGitOperation(); // recursive
-    });  
-  };
-}
-
-var checkUpdateForPost = function(userInfo, note) {
+var checkUpdateForPost = function(userInfo, note, callback) {
   var userId = userInfo.id;
   var result = redisClient.get('users:' + userId + ':posts:' + note.guid + ':updated', function(err, updated) {
 
     console.log('Get `updated` for note ' + note.guid + ': ' + updated);
 
-    updated = false; // test
-
     if (!updated) {
       console.log('New post: ' + note.title);
-      // return 'create';
 
-      // createPostWithMetadata(userInfo, note);
-      addGitOperation('create', userInfo, note.guid);
-
+      createPostWithMetadata(userInfo, note.guid, callback);
     } else if (note.updated != updated) {
       // update note
       console.log('Update post: ' + note.title);
-      // return 'update';
-      // updatePostWithMetadata(userInfo, note);
-      addGitOperation('update', userInfo, note.guid);
+      updatePostWithMetadata(userInfo, note.guid, callback);
     } else {
       console.log('Old post: ' + note.title);
-      return null;
+      callback(null);
     };
   });
 }
@@ -584,53 +536,16 @@ var updateGithubPost = function(userId, githubSha, note, callback){
 };
 
 
-// var getNote = function(req, res, guid, cb){
-  
-//   if(!req.session.user) return res.send('Unauthenticate',401);
-//   if(!req.body) return res.send('Invalid content',400);
-  
-//   var userInfo = req.session.user;
-
-//   evernote.getNote(userInfo, guid, null, function(err, note) {
-    
-//     if (err) {
-//       cb(err);
-//     } 
-//     cb(null, note)
-//   });
-// });
-
-
 app.get('/github/create', function(req, res){
   console.log('/github/create');
   if(!req.session.user) return res.send('Unauthenticate',401);
 
-
-  var date = '13-06-01';
-  var timestamp = new Date().getTime();
-  var title = '' + timestamp;
-  var filename = date + '-' + title + '.md';
-  var content = "Yeah this is cool";
-
-  var userId = req.session.user.id;
-
-
-  var result = redisClient.get('users:' + userId + ':github:authToken', function(err, data) {
-    console.log('got github token ' + data);
-
-    githubClient.token = data;
-    ghrepo.contentsCreate(title, content, function(err, data) {
-      console.log("error" + err + "data: " + data);
-      return res.send(data,200);
-    });
-
-  });
+  return res.send(data,200);
 
 });
 
 
 app.get('/evernote/webhook', function(req, res){
-  
 
   var url_parts = url.parse(req.url, true);
   var query = url_parts.query;
@@ -661,8 +576,7 @@ app.get('/evernote/webhook', function(req, res){
     }
 
     res.end('', 200);
-  });  
-
+  });
 
 });
 
