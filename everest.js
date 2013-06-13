@@ -1,7 +1,5 @@
 const KEY = 'express.sid'
   , SECRET = 'express'
-  , GITHUB_CLIENT_ID = '1144e0f6ba3889d04621'
-  , GITHUB_CLIENT_SECRET = '910f3c346e97c8bdfccbb9001d7b010f1ce6a0e3'
   ;
 
 
@@ -10,7 +8,7 @@ require('./utils.js');
 var config = new require('./config.js')();
 
 console.log("Starting with configuration");
-console.log(global.config);
+console.log(config);
 
 var util = require('util');
 var querystring = require('querystring');
@@ -22,7 +20,6 @@ var express = require('express')
 
 var app = express()
   , server = http.createServer(app);
-
 
 // Create an Evernote instance
 var Evernote = require('./evernode').Evernote;
@@ -68,94 +65,15 @@ var RedisStore = require('connect-redis')(express)
 
 //
 
-var github = require('octonode')
-  , url = require('url')
-  , qs = require('querystring');
-// Build the authorization config and url
-var auth_url = github.auth.config({
-  id: config.githubClientId,
-  secret: config.githubClientSecret
-}).login(['user', 'repo', 'gist']);
-
-var githubClient = github.client({
-  id: config.githubClientId,
-  secret: config.githubClientSecret
-});
+var github = require('./lib/github')
+  , url = require('url');
 
 
-var ghme   = githubClient.me();
 
-var Repo = github.repo;
+var githubClient = github.apiClient();
+
 
 var repositoryName = process.env.BLOG_REPOSITORY;
-
-if (!repositoryName) {
-  repositoryName = "testblog";
-};
-
-Repo.prototype.contentsCreate = function(filename, content, cb) {
-
-  var path = '_posts/' + filename;
-
-  var contentInBase64 = new Buffer(content).toString('base64');
-
-  // console.log("GIT: /repos/" + this.name + "/contents/" + path);
-
-  return this.client.put("/repos/" + this.name + "/contents/" + path, 
-    {
-      "message": "Create filename: " + path
-      , "content": contentInBase64 
-    }
-    , function(err, s, b) {
-      // console.log(err);
-      // console.log(s);
-      // console.log(b);
-      // console.log("GIT: " +  path + ": Status: " + s);
-
-      if (err) {
-        return cb(err);
-      }
-
-      if (s !== 201) {
-        return cb(new Error("Repo contents error with status: " + s));
-      } else {
-        return cb(null, b);
-      }
-    });
-};
-
-Repo.prototype.contentsUpdate = function(filename, sha, content, cb) {
-
-  var path = '_posts/' + filename;
-
-  var contentInBase64 = new Buffer(content).toString('base64');
-
-
-  // console.log("GIT: /repos/" + this.name + "/contents/" + path);
-
-  return this.client.put("/repos/" + this.name + "/contents/" + path, 
-    {
-      "message": "Create filename: " + path
-      , "content": contentInBase64
-      , "sha" : sha
-    }
-    , function(err, s, b) {
-      // console.log(err);
-      // console.log(s);
-      // console.log(b);
-      console.log("GIT: " +  path + ": Status: " + s);
-
-      if (err) {
-        return cb(err);
-      }
-
-      // if (s !== 201) {
-      //   return cb(new Error("Repo contents error"));
-      // } else {
-      return cb(null, b);
-      // }
-    });
-};
 
 
 var ghme   = githubClient.me();
@@ -163,8 +81,6 @@ var ghrepo = githubClient.repo('athanhcong/' + repositoryName);
 
 console.log('RepositoryName: ' + repositoryName);
 
-// Store info to verify against CSRF
-var state = auth_url.match(/&state=([0-9a-z]{32})/i);
 
 //Setup ExpressJS
 app.configure(function(){
@@ -193,6 +109,8 @@ app.configure(function(){
   });
 
   app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+
+  app.use(github);
 
 });
 
@@ -278,44 +196,25 @@ app.all('/authentication/callback', function(req, res){
   });
 });
 
+github.authenticationCallback = function(req, res, data, token) {
+  console.log("Github Callback to Express");
 
-app.get('/github/authentication', function(req, res){
-  console.log("github/authentication");
-  res.writeHead(301, {'Content-Type': 'text/plain', 'Location': auth_url})
-  res.end('Redirecting to ' + auth_url);
-});
+  var userId = req.session.user.id;
 
-app.all('/github/authentication/callback', function(req, res){
-  console.log("github/authentication/callback");
-  var uri = url.parse(req.url);
-  var values = qs.parse(uri.query);
-  // Check against CSRF attacks
-  // if (!state || state[1] != values.state) {
-  //   res.writeHead(403, {'Content-Type': 'text/plain'});
-  //   res.end('');
-  // } else {
-    github.auth.login(values.code, function (err, token) {
-      console.log("github/authentication/callback " + err + ' ' + token);
-      // res.writeHead(200, {'Content-Type': 'text/plain'});
+  redisClient.set('users:' + userId + ':github:authToken', token);
 
-      var userId = req.session.user.id;
+  req.session.github = {};
+  req.session.github.authToken = token;
+  githubClient.token = token;
+  
+  ghme.info(function(err, data) {
+    console.log("error: " + err);
+    console.log("data: " + data);
 
-      redisClient.set('users:' + userId + ':github:authToken', token);
-
-      req.session.github = {};
-      req.session.github.authToken = token;
-      githubClient.token = token;
-      ghme.info(function(err, data) {
-        console.log("error: " + err);
-        console.log("data: " + data);
-
-        redisClient.set('users:' + userId + ':github:user', JSON.stringify(data));
-        res.redirect('/');
-      });
-      
-    });
-  // }
-});
+    redisClient.set('users:' + userId + ':github:user', JSON.stringify(data));
+    res.redirect('/');
+  });
+};
 
 
 
