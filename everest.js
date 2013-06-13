@@ -575,7 +575,6 @@ app.get('/evernote/webhook', function(req, res){
 
   console.log('/evernote/webhook ' + userId + ' ' + noteGuid + ' ' + reason);
 
-
   //redisClient.set('users:' + userId + ':evernote:user', JSON.stringify(req.session.user));
 
   var result = redisClient.get('users:' + userId + ':evernote:user', function(err, data) {
@@ -586,12 +585,12 @@ app.get('/evernote/webhook', function(req, res){
       return;
     }
 
-    var user = JSON.parse(data);
+    var userInfo = JSON.parse(data);
 
     if (reason == 'create') {
-      addGitOperation('create', user, noteGuid);
+      createPostWithMetadata(userInfo, noteGuid, null));
     } else if (reason == 'update') {
-      addGitOperation('update', user, noteGuid);
+      createPostWithMetadata(userInfo, noteGuid, null));
     }
 
     res.end('', 200);
