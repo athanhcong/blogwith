@@ -588,9 +588,9 @@ app.get('/evernote/webhook', function(req, res){
     var userInfo = JSON.parse(data);
 
     if (reason == 'create') {
-      createPostWithMetadata(userInfo, noteGuid, null));
+      createPostWithMetadata(userInfo, noteGuid, function(err, data){});
     } else if (reason == 'update') {
-      createPostWithMetadata(userInfo, noteGuid, null));
+      createPostWithMetadata(userInfo, noteGuid, function(err, data){});
     }
 
     res.end('', 200);
