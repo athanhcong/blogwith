@@ -29,8 +29,6 @@ var evernote = new Evernote(
 		config.evernoteUsedSandbox
 		);
 
-var enml = require('enml-js');
-var md = require('html-md');
 
 var  redis = require('redis');
 var redisClient;
@@ -70,12 +68,11 @@ var github = require('./lib/github')
 
 
 
-var githubClient = github.apiClient();
 
 
 var repositoryName = process.env.BLOG_REPOSITORY;
 
-
+var githubClient = github.apiClient();
 var ghme   = githubClient.me();
 var ghrepo = githubClient.repo('athanhcong/' + repositoryName);
 
@@ -409,7 +406,6 @@ var addGitOperation = function (type, userInfo, noteGuid) {
   startGitOperation();
 }
 var startGitOperation = function () {
-  console.log("startGitOperation");
 
   if (!isGitInOperation && gitOperations.length > 0) {
     var operation = gitOperations.shift();
@@ -420,7 +416,9 @@ var startGitOperation = function () {
       operator = updatePostWithMetadata;
     }
 
-    isGitInOperation = true;
+    console.log("Perform GitOperation: " + operation.type + " - Note: " + operation.noteGuid);
+
+    // isGitInOperation = true;
     operator(operation.userInfo, operation.noteGuid, function (err, data) {
       isGitInOperation = false;
       startGitOperation(); // recursive
@@ -432,7 +430,9 @@ var checkUpdateForPost = function(userInfo, note) {
   var userId = userInfo.id;
   var result = redisClient.get('users:' + userId + ':posts:' + note.guid + ':updated', function(err, updated) {
 
-    console.log('get updated for ' + note.guid + ': ' + updated);
+    console.log('Get `updated` for note ' + note.guid + ': ' + updated);
+
+    updated = false; // test
 
     if (!updated) {
       console.log('New post: ' + note.title);
@@ -458,14 +458,12 @@ var createPostWithMetadata = function(userInfo, noteGuid, callback) {
   // console.log('createPostWithMetadata');
 
   evernote.getNote(userInfo, noteGuid, {}, function(err, note) {
-    
+    console.log('Get note for creating: Error: ' + err + ' - Note: ' + note.title);
+
     if (err) {
       callback(err);
       return;
     }
-
-    console.log('Get note for creating: ' + note.title);
-
 
     createGithubPost(userInfo.id, note, function(err, data) {
       callback(err, data);
@@ -478,12 +476,14 @@ var updatePostWithMetadata = function(userInfo, noteGuid, callback) {
 
   evernote.getNote(userInfo, noteGuid, {}, function(err, note) {
     
+    console.log('Get note for updating: Error: ' + err + ' - Note: ' + note.title);
+
     if (err) {
       callback(err);
       return;
     }
 
-    console.log('Get note for updating: ' + note.title);
+    
     // redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
     var userId = userInfo.id;
     var result = redisClient.get('users:' + userId + ':posts:' + note.guid + ':githubData', function(err, data) {
@@ -524,38 +524,19 @@ var initBlogWithNotesMetadata = function(req, res, notesMetadata) {
 
 var createGithubPost = function(userId, note, callback){
 
-  var contentHtml = enml.HTMLOfENML(note.content);
-  var contentMarkdown = md(contentHtml);
-  var title = note.title;
-
-  contentMarkdown = '---\nlayout: post\ntitle: ' + title + '\n---\n' + contentMarkdown;
-
-
-
-  // var date = new Date(note.created);
-  var date = new Date();
-  var timestamp = new Date().getTime();
-
-  var titleFilename = title.toLowerCase().split(' ').join('-');
-  var filename = date.getFullYear() + '-' + date.getMonth().pad(2) + '-' + date.getDay().pad(2) + '-' + titleFilename + '.md';
-  // var content = "Yeah this is cool";
-  // filename = timestamp + filename;
-
-  console.log('createGithubPost ' + filename + ' ' + contentMarkdown);
-
   var result = redisClient.get('users:' + userId + ':github:authToken', function(err, data) {
+
 
     if (err) {
       callback(err);
       return;
     };
 
-    githubClient.token = data;
-    ghrepo.contentsCreate(filename, contentMarkdown, function(err, data) {
-      console.log("Git create: " + filename + " - Error: " + err + " - Data: " + data);
-      // console.log("error: " + err);
-      // console.log("data: " + JSON.stringify(data));
+    var _ghClient = github.apiClient();
+    _ghClient.token = data;
+    var _ghRepo = _ghClient.repo('athanhcong/testblog', _ghClient);
 
+    _ghRepo.createGithubPost(note, function(err, data) {
       // Save to database
       if (err) {
       } else if (data) {
@@ -565,34 +546,17 @@ var createGithubPost = function(userId, note, callback){
         redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
       };
 
-      // Callback
       callback(err, data);
     });
+
   });
 };
 
 
 
+
 // Update a file in github
 var updateGithubPost = function(userId, githubSha, note, callback){
-
-  var contentHtml = enml.HTMLOfENML(note.content);
-  var contentMarkdown = md(contentHtml);
-  var title = note.title;
-
-  // console.log('createGithubPost ' + title + ' ' + contentHtml);
-  contentMarkdown = '---\nlayout: post\ntitle: ' + title + '\n---\n' + contentMarkdown;
-
-  // var date = new Date(note.created);
-  var date = new Date();
-  var timestamp = new Date().getTime();
-
-  var titleFilename = title.toLowerCase().split(' ').join('-');
-  var filename = date.getFullYear() + '-' + date.getMonth().pad(2) + '-' + date.getDay().pad(2) + '-' + titleFilename + '.md';
-  // var content = "Yeah this is cool";
-  // filename = timestamp + filename;
-
-  console.log('updateGithubPost ' + filename + ' ' + contentMarkdown);
 
   var result = redisClient.get('users:' + userId + ':github:authToken', function(err, data) {
 
@@ -600,9 +564,11 @@ var updateGithubPost = function(userId, githubSha, note, callback){
       return callback(err);
     };
 
-    githubClient.token = data;
-    ghrepo.contentsUpdate(filename, githubSha, contentMarkdown, function(err, data) {
-      console.log("Git update: " + filename + " - Error: " + err + " - Data: " + data);
+    var _ghClient = github.apiClient();
+    _ghClient.token = data;
+    var _ghRepo = _ghClient.repo('athanhcong/testblog', _ghClient);
+
+    _ghRepo.updateGithubPost(githubSha, note, function(err, data) {
       // Save to database
       if (err) {
 
@@ -612,9 +578,7 @@ var updateGithubPost = function(userId, githubSha, note, callback){
         redisClient.set('users:' + userId + ':posts:' + guid + ':updated', note.updated);
         redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
       };
-
-      // Callback
-      callback(err, data);
+      callback(err, data); 
     });
   });
 };
