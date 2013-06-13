@@ -13,6 +13,7 @@
     , "ejs": "latest"
     , "html" : "latest"
     , "html-md" : "latest"
+    , "async" : "latest" // Control Flow for Github API
   },
   "engines": {
     "node": "0.8.14"

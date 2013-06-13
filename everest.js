@@ -7,8 +7,7 @@ const KEY = 'express.sid'
 
 require('./utils.js');
 
-global.config = new require('./config.js')();
-var config = global.config;
+var config = new require('./config.js')();
 
 console.log("Starting with configuration");
 console.log(global.config);
@@ -74,13 +73,13 @@ var github = require('octonode')
   , qs = require('querystring');
 // Build the authorization config and url
 var auth_url = github.auth.config({
-  id: GITHUB_CLIENT_ID,
-  secret: GITHUB_CLIENT_SECRET
+  id: config.githubClientId,
+  secret: config.githubClientSecret
 }).login(['user', 'repo', 'gist']);
 
 var githubClient = github.client({
-  id: GITHUB_CLIENT_ID,
-  secret: GITHUB_CLIENT_SECRET
+  id: config.githubClientId,
+  secret: config.githubClientSecret
 });
 
 
