@@ -183,7 +183,7 @@ app.all('/authentication/callback', function(req, res){
   });
 });
 
-github.authenticationCallback = function(req, res, data, token) {
+github.authenticationCallback = function(req, res, err, token) {
   console.log("Github Callback to Express");
 
   var userId = req.session.user.id;
@@ -195,17 +195,66 @@ github.authenticationCallback = function(req, res, data, token) {
   
   var _ghClient = github.apiClient();
   _ghClient.token = token;
-  _ghClient.me().info(function(err, data) {
+  var _ghMe = _ghClient.me();
+  _ghMe.info(function(err, data) {
     console.log("error: " + err);
     console.log("data: " + data);
 
     if (data) {
       data.authToken = token;
       redisClient.set('users:' + userId + ':github:user', JSON.stringify(data));
-      res.redirect('/');      
-    };
 
+      var userLogin = data.login;
+      _ghMe.repos(function(err, data) {
+          console.log("repos: " + err);
+        if (err) {
+          res.send(err,500);
+        } else {
+          
+
+          var comRepoName = userLogin + '.github.com';
+          var ioRepoName = userLogin + '.github.io';
+
+          var foundRepo;
+          for (var i = data.length - 1; i >= 0; i--) {
+            var repo = data[i];
+            
+            if (repo.name == ioRepoName || repo.name == comRepoName) {
+              foundRepo = repo;
+              break;
+            };
+          };
+
+          if (foundRepo) {
+            console.log("Found repo " + JSON.stringify(foundRepo));
+            redisClient.set('users:' + userId + ':github:pageData', JSON.stringify(
+              {
+                'login' : userLogin
+                , 'authToken' : token
+                , 'repoName' : foundRepo.name
+                , 'repo' : foundRepo
+              }));
+          } else {
+            console.log("NOT Found repo. Create one");
+            // Create repo
+
+          };
+
+          res.redirect('/');    
+        }
+
+
+
+        
+      });
+
+      
+    } else {
+      res.send(err,500);
+    };
   });
+
+
 };
 
 
@@ -217,31 +266,61 @@ app.get('/evernote/create-notebook', function(req, res){
   console.log("/evernote/create-notebook");
 
 
-
   if(!req.session.user) return res.send('Unauthenticate',401);
   if(!req.body) return res.send('Invalid content',400);
-  
+
+  var userInfo = req.session.user;
   var userId = req.session.user.id;
 
   var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, notebook){
     if (notebook) {
       console.log(JSON.stringify(notebook));
     } else {
-      console.log("No notebook. Creating one");
-      var notebook = {"name": "Blog with Evernote"};
-      var userInfo = req.session.user;
-  
-      evernote.createNotebook(userInfo, notebook, function(err, data) {
-        console.log("Creating " + err + ' ' + JSON.stringify(data));
-        if (err) {
-          if(err == 'EDAMUserException') return res.send(err,403);
-          return res.send(err,500);
+      var notebookName = "Blog with Evernote";
+
+      // Check for note books
+      evernote.listNotebooks(userInfo, function(err, data) {
+        console.log("Retrieved notebooks: " + data.length +  JSON.stringify(data));
+
+        var foundNotebook;
+        if (data) {
+          // Check for "Blog with Evernote"
+          for (var i = data.length - 1; i >= 0; i--) {
+            var aNotebook = data[i];
+            console.log("Notebook " + JSON.stringify(aNotebook));
+            console.log("Notebook name" +  aNotebook.name);
+            if (aNotebook.name == notebookName) {
+              console.log("Found name" + aNotebook.name);
+
+              foundNotebook = aNotebook;
+              break;
+            };
+          };
+        };
+
+        if (foundNotebook) {
+          console.log("Found notebook");
+          redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(foundNotebook));
+          return res.redirect('/');
+
         } else {
-          redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
-        }
-      });
+          console.log("No notebook. Creating one");
+          var notebook = {"name": notebookName};
+      
+          evernote.createNotebook(userInfo, notebook, function(err, data) {
+            console.log("Creating " + err + ' ' + JSON.stringify(data));
+            if (err) {
+              if(err == 'EDAMUserException') return res.send(err,403);
+              return res.send(err,500);
+            } else {
+              redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
+              return res.redirect('/');
+            }
+          });
+
+        };
+      }); // list notebooks
     }
-    return res.redirect('/');
 
   });
 });
@@ -454,7 +533,6 @@ var updatePostWithMetadata = function(userInfo, noteGuid, callback) {
         });
       };
 
-
     });
   });
 }
@@ -525,24 +603,19 @@ var updateGithubPost = function(userId, githubSha, note, callback){
 };
 
 var githubRepoWithUserId = function(userId, callback) {
-  var result = redisClient.get('users:' + userId + ':github:user', function(err, data) {
+  var result = redisClient.get('users:' + userId + ':github:pageData', function(err, data) {
 
     if (err) {
       return callback(err);
     };
 
-    var githubUser = JSON.parse(data);
-    var githubUsername = githubUser.login;
+    var githubPageData = JSON.parse(data);
+    var githubUsername = githubPageData.login;
 
-    var githubRepoName = githubUsername + '.github.com';
-    if (config.githubRepo) {
-      githubRepoName = config.githubRepo;
-    };
-
-    githubRepoName = githubUsername + '/' + githubRepoName;
+    githubRepoName = githubUsername + '/' + githubPageData.repoName;
 
     var _ghClient = github.apiClient();
-    _ghClient.token = githubUser.authToken;
+    _ghClient.token = githubPageData.authToken;
     var _ghRepo = _ghClient.repo(githubRepoName);
 
     callback(null, _ghRepo);
