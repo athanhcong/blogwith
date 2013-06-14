@@ -273,6 +273,7 @@ app.get('/evernote/create-notebook', function(req, res){
   var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, notebook){
     if (notebook) {
       console.log(JSON.stringify(notebook));
+      return res.redirect('/');
     } else {
       var notebookName = "Blog with Evernote";
 
