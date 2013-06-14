@@ -85,3 +85,18 @@ a:active, a:hover { color: #96cC55; text-decoration:none; }
   background-color: #96cC55;
 }
 
+.info {
+  visibility: hidden;
+  padding-left: 10px;
+  display: none;
+}
+
+.active {
+  visibility: visible;
+  display: block;
+}
+
+code { 
+  white-space: pre; 
+  color: gray;
+}

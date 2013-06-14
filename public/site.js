@@ -7,12 +7,12 @@ $(function() {
   function reloadtabs(){
     
     var hash = document.location.hash;
-    var example = hash.substring(1);
-    if(hash == '') example = 'findnotes-example'
+    var hashValue = hash.substring(1);
+    if(hash == '') hashValue = 'intro'
      
-    $('.container .tabs>li>a').removeClass('active');
-    $('.container .content').removeClass('active');
-    $('.container .'+example).addClass('active');
+    console.log('Hash Value: ' + hashValue);
+    $('.info').removeClass('active');
+    $('.info.'+hashValue).addClass('active');
   }
   
   window.onhashchange = reloadtabs;
@@ -45,21 +45,20 @@ $(function() {
   
   //------------------------- Find Notes - example -------------------------
   
-  function reloadNotes(value){
+ //  function reloadNotes(value){
     
-	  //example_findNotes.js
-	  exampleFindNotes(value, function(err,noteList) {  
-		  if(err) return null;
+	//   //example_findNotes.js
+	//   exampleFindNotes(value, function(err,noteList) {  
+	// 	  if(err) return null;
 		  
-		  $('.findnotes-example ul').html('');
-		  for(var i in noteList.notes){
-		    var note = noteList.notes[i]
-		    $('.findnotes-example ul').append('<li>'+note.title+'</li>')
-		  }
-		})
-	}
+	// 	  $('.findnotes-example ul').html('');
+	// 	  for(var i in noteList.notes){
+	// 	    var note = noteList.notes[i]
+	// 	    $('.findnotes-example ul').append('<li>'+note.title+'</li>')
+	// 	  }
+	// 	})
+	// }
   
-  reloadNotes('');
   $(".findnotes-example input[type=text]").live('keyup', function () {
 	    var value=$(".findnotes-example input[type=text]").val();
 	    setTimeout(function(){

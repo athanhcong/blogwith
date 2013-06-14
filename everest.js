@@ -238,7 +238,7 @@ github.authenticationCallback = function(req, res, err, token) {
 
           };
 
-          res.redirect('/');    
+          res.redirect('/#github');    
         }
 
 

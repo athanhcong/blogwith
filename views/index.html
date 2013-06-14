@@ -51,15 +51,41 @@
         <li><a class="active findnotes-example" href='#findnotes-example'>Find Notes</a></li>
         <li><a class="create-example" href='#create-example'>Create</a></li>
       </ul>
+
       -->
+
+      <h2>1. <a href='/evernote/create-notebook'>Create a Notebook</a></h2>
+      <div class="info notebook active">This is cool</div>
+      <h2>2. <a href='/github/authentication'>Connect with Github</a></h2>
+      <div class="info github">
+
+        <h3>Setup your Github Pages</h4>
+          <p>Copy this code and paste into your browser:</p>
+        
+<code>gem install jekyll
+jekyll new myblog
+cd myblog  
+git init
+git add .
+git commit -m "Start with Github"
+git remote add origin https://github.com/kongtest/kongtest.github.io.git
+git push -u origin master
+
+git checkout --orphan gh-pages 
+git commit -m "Start with Github Pages"
+git push origin gh-pages</code>
+      </div>
+      <h2>3. Happy blogging.</h2>
+      <div class="info blog">Yeah</div>
+      <div></div>
+
+
+
     </div> 
     
     <div class="bottom-container">
       <br>
       <footer>
-        <h2><a href='/github/authentication'>Connect with Github</a></h2>
-        <h2><a href='/evernote/create-notebook'>Create Notebook</a></h2>
-        <h2><a href='/evernote/sync'>Sync</a></h2>
         
       </footer>  
     </div>
