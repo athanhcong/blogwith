@@ -418,7 +418,7 @@ var createPostWithMetadata = function(userInfo, noteGuid, callback) {
 }
 
 var updatePostWithMetadata = function(userInfo, noteGuid, callback) {
-  // console.log('updatePostWithMetadata');
+  console.log('updatePostWithMetadata');
 
   evernote.getNote(userInfo, noteGuid, {}, function(err, note) {
     
@@ -590,7 +590,7 @@ app.get('/evernote/webhook', function(req, res){
     if (reason == 'create') {
       createPostWithMetadata(userInfo, noteGuid, function(err, data){});
     } else if (reason == 'update') {
-      createPostWithMetadata(userInfo, noteGuid, function(err, data){});
+      updatePostWithMetadata(userInfo, noteGuid, function(err, data){});
     }
 
     res.end('', 200);
