@@ -3,8 +3,6 @@ const KEY = 'express.sid'
   ;
 
 
-require('./utils.js');
-
 var config = new require('./config.js')();
 
 console.log("Starting with configuration");
