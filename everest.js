@@ -50,12 +50,16 @@ var RedisStore = require('connect-redis')(express)
                             });
 
 var Evernote = require('evernote').Evernote;
-var evernote = new Evernote.Client(
+var EvernoteClient = function(oauthAccessToken) {
+  return new Evernote.Client(
   {  consumerKey: config.evernoteConsumerKey
     , consumerSecret: config.evernoteConsumerSecret
     , sandbox: config.evernoteUsedSandbox
+    ,token: oauthAccessToken
   });
+}
 
+ 
 var github = require('./lib/github')
   , url = require('url');
 
@@ -377,8 +381,7 @@ app.get('/evernote/create-notebook', function(req, res){
     } else {
       var notebookName = "Blog with Evernote";
 
-      var noteStore = new Evernote.Client({token: req.session.oauthAccessToken}).getNoteStore();
-
+      var noteStore = EvernoteClient(req.session.oauthAccessToken).getNoteStore();
       // Check for note books
       noteStore.listNotebooks(req.session.oauthAccessToken, function(data) {
         console.log("Retrieved notebooks: " + data.length +  JSON.stringify(data));
@@ -495,7 +498,7 @@ app.get('/evernote/sync', function(req, res){
     
 
     //NoteStoreClient.prototype.findNotesMetadata = function(authenticationToken, filter, offset, maxNotes, resultSpec, callback) {
-    var noteStore = new Evernote.Client({token: req.session.oauthAccessToken}).getNoteStore();
+    var noteStore = EvernoteClient(req.session.oauthAccessToken).getNoteStore();
 
     var noteFilter = new Evernote.NoteFilter({notebookGuid : notebookGuid});
     var resultSpec = new Evernote.NotesMetadataResultSpec(
@@ -604,8 +607,8 @@ var checkUpdateForPost = function(req, note, callback) {
 }
 
 var createPostWithMetadata = function(userInfo, noteGuid, callback) {
-  var noteStore = new Evernote.Client({token: userInfo.oauthAccessToken }).getNoteStore();
-
+  var noteStore = EvernoteClient(userInfo.oauthAccessToken).getNoteStore();
+  
   //getNote = function(authenticationToken, guid, withContent, withResourcesData, withResourcesRecognition, withResourcesAlternateData, callback) {
   noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
     console.log('Get note for creating: - Note: ' + note.title);
@@ -622,8 +625,7 @@ var createPostWithMetadata = function(userInfo, noteGuid, callback) {
 var updatePostWithMetadata = function(userInfo, noteGuid, callback) {
   console.log('updatePostWithMetadata');
 
-  var noteStore = new Evernote.Client({token: userInfo.oauthAccessToken }).getNoteStore();
-
+  var noteStore = EvernoteClient(userInfo.oauthAccessToken).getNoteStore();
 
   noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
     
@@ -820,6 +822,7 @@ app.get('/me', function(req, res){
 
   return res.send(req.session.user,200);
 
+
   // var userStore = new Evernote.Client({token: req.session.oauthAccessToken}).getUserStore();
 
   // userStore.getUser(function(edamUser) {
@@ -834,37 +837,13 @@ app.get('/note', function(req, res){
     return res.send('Please, provide valid authToken',401);
   
 
-  var evernote = new Evernote.Client(
-    { token: req.session.oauthAccessToken
-      , consumerKey: config.evernoteConsumerKey
-      , consumerSecret: config.evernoteConsumerSecret
-      , sandbox: config.evernoteUsedSandbox
-    });
-
-  var noteStore = evernote.getNoteStore();
+  var noteStore = EvernoteClient(req.session.oauthAccessToken).getNoteStore();
   //getNote = function(authenticationToken, guid, withContent, withResourcesData, withResourcesRecognition, withResourcesAlternateData, callback) {
   noteStore.getNote(req.session.oauthAccessToken, "9af28b07-e4f8-4433-bae0-1d6aac37c699", false, false, false, false, function(note) {
       return res.send(note,200);
   });
 });
 
-app.get('/note2', function(req, res){
-  
-  if(!req.session.user)
-    return res.send('Please, provide valid authToken',401);
-  
-
-  var evernote = new Evernote.Client(
-    { token: req.session.oauthAccessToken
-      , secret: req.session.oauthAccessTokenSecret
-    });
-
-  var noteStore = evernote.getNoteStore();
-  //getNote = function(authenticationToken, guid, withContent, withResourcesData, withResourcesRecognition, withResourcesAlternateData, callback) {
-  noteStore.getNote(req.session.oauthAccessToken, "9af28b07-e4f8-4433-bae0-1d6aac37c699", false, false, false, false, function(note) {
-      return res.send(note,200);
-  });
-});
 
 server.listen(config.serverPort, function(){
   console.log("Express server listening on port " + config.serverPort)
