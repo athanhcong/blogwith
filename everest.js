@@ -226,12 +226,15 @@ app.all('/authentication/callback', function(req, res){
 
       
       req.session.oauthAccessToken = oauthAccessToken;
+      req.session.oauthAccessTokenSecret = oauthAccessTokenSecret;
 
       client.token = req.session.oauthAccessToken;
 
       client.getUserStore().getUser(oauthAccessToken, function(edamUser) {
         
-        edamUser.oauthAccessToken = oauthAccessToken
+        edamUser.oauthAccessToken = oauthAccessToken;
+        edamUser.oauthAccessTokenSecret = oauthAccessTokenSecret;
+        
         req.session.user = edamUser;
 
         var userId = req.session.user.id;
@@ -832,7 +835,14 @@ app.get('/note', function(req, res){
     return res.send('Please, provide valid authToken',401);
   
 
-  var evernote = new Evernote.Client({token: req.session.oauthAccessToken});
+  var evernote = new Evernote.Client(
+    { token: req.session.oauthAccessToken
+      , secret: req.session.oauthAccessTokenSecret
+      , consumerKey: config.evernoteConsumerKey
+      , consumerSecret: config.evernoteConsumerSecret
+      , sandbox: config.evernoteUsedSandbox
+    });
+
   var noteStore = evernote.getNoteStore();
   //getNote = function(authenticationToken, guid, withContent, withResourcesData, withResourcesRecognition, withResourcesAlternateData, callback) {
   noteStore.getNote(req.session.oauthAccessToken, "9af28b07-e4f8-4433-bae0-1d6aac37c699", false, false, false, false, function(note) {

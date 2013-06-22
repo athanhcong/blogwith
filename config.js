@@ -18,6 +18,7 @@ module.exports = function() {
       config['serverUrl'] = 'http://localhost:' + config.serverPort;
       config['githubClientId'] = 'd40e218e245efc6cedb1';
       config['githubClientSecret'] = 'a026298fd821e95083fe4a1c9e640494088e741c';
+      config.evernoteUsedSandbox = true;
   };
 
   config['githubRepo'] = process.env.BLOG_REPOSITORY;
