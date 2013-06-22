@@ -50,7 +50,11 @@ var RedisStore = require('connect-redis')(express)
                             });
 
 var Evernote = require('evernote').Evernote;
-//
+var evernote = new Evernote.Client(
+  {  consumerKey: config.evernoteConsumerKey
+    , consumerSecret: config.evernoteConsumerSecret
+    , sandbox: config.evernoteUsedSandbox
+  });
 
 var github = require('./lib/github')
   , url = require('url');
@@ -824,11 +828,6 @@ app.get('/me', function(req, res){
   // });
 });
 
-server.listen(config.serverPort, function(){
-  console.log("Express server listening on port " + config.serverPort)
-})
-
-
 app.get('/note', function(req, res){
   
   if(!req.session.user)
@@ -837,10 +836,27 @@ app.get('/note', function(req, res){
 
   var evernote = new Evernote.Client(
     { token: req.session.oauthAccessToken
-      , secret: req.session.oauthAccessTokenSecret
       , consumerKey: config.evernoteConsumerKey
       , consumerSecret: config.evernoteConsumerSecret
       , sandbox: config.evernoteUsedSandbox
+    });
+
+  var noteStore = evernote.getNoteStore();
+  //getNote = function(authenticationToken, guid, withContent, withResourcesData, withResourcesRecognition, withResourcesAlternateData, callback) {
+  noteStore.getNote(req.session.oauthAccessToken, "9af28b07-e4f8-4433-bae0-1d6aac37c699", false, false, false, false, function(note) {
+      return res.send(note,200);
+  });
+});
+
+app.get('/note2', function(req, res){
+  
+  if(!req.session.user)
+    return res.send('Please, provide valid authToken',401);
+  
+
+  var evernote = new Evernote.Client(
+    { token: req.session.oauthAccessToken
+      , secret: req.session.oauthAccessTokenSecret
     });
 
   var noteStore = evernote.getNoteStore();
