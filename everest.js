@@ -20,13 +20,19 @@ var app = express()
   , server = http.createServer(app);
 
 // Create an Evernote instance
-var Evernote = require('./evernode').Evernote;
-var evernote = new Evernote(
+var Evernote = require('evernote').Evernote;
+var evernote = new Evernote.Client (
 		config.evernoteConsumerKey,
 		config.evernoteConsumerSecret,
 		config.evernoteUsedSandbox
 		);
 
+
+var evernoteClient = new Evernote.Client({
+  consumerKey: config.evernoteConsumerKey,
+  consumerSecret: config.evernoteConsumerSecret,
+  sandbox: config.evernoteUsedSandbox
+});
 
 var  redis = require('redis');
 var redisClient;
@@ -145,40 +151,131 @@ app.all('/authentication', function(req, res){
 	
 	var evernote_callback = config.serverUrl + '/authentication/callback';
 	
-  evernote.oAuth(evernote_callback).getOAuthRequestToken( function(error, oauthToken, oauthTokenSecret, results){
+  // evernote.oAuth(evernote_callback).getOAuthRequestToken( function(error, oauthToken, oauthTokenSecret, results){
 		
-		if (error) return res.send("Error getting OAuth request token : " + util.inspect(error), 500);
+		// if (error) return res.send("Error getting OAuth request token : " + util.inspect(error), 500);
 
-    req.session.oauthRequestToken = oauthToken;
-    res.redirect( evernote.oAuthRedirectUrl(oauthToken) );      
+  //   req.session.oauthRequestToken = oauthToken;
+  //   res.redirect( evernote.oAuthRedirectUrl(oauthToken) );      
+  // });
+
+
+  var client = new Evernote.Client({
+    consumerKey: config.evernoteConsumerKey,
+    consumerSecret: config.evernoteConsumerSecret,
+    sandbox: config.evernoteUsedSandbox
   });
+
+  // console.log (JSON.stringify({
+  //   consumerKey: config.evernoteConsumerKey,
+  //   consumerSecret: config.evernoteConsumerKey,
+  //   sandbox: config.evernoteUsedSandbox
+  // }));
+  client.getRequestToken(evernote_callback, function(error, oauthToken, oauthTokenSecret, results){
+    if (error) return res.send("Error getting OAuth request token : " + util.inspect(error), 500);
+
+    if(error) {
+      req.session.error = JSON.stringify(error);
+      res.redirect('/');
+    }
+    else { 
+
+      req.session.oauthRequestToken = oauthToken; // Old code
+
+      // store the tokens in the session
+      req.session.oauthToken = oauthToken;
+      req.session.oauthTokenSecret = oauthTokenSecret;
+
+
+
+      // redirect the user to authorize the token
+      res.redirect(client.getAuthorizeUrl(oauthToken));
+    }
+  });  
 
 });
 
 app.all('/authentication/callback', function(req, res){
 	
-	var evernote_callback = config.serverUrl +'/evernote/authentication/callback';
+	// var evernote_callback = config.serverUrl +'/evernote/authentication/callback';
 		
-  evernote.oAuth(evernote_callback).getOAuthAccessToken( req.session.oauthRequestToken, 
-		req.session.oauthRequestTokenSecret, 
-		req.query.oauth_verifier, 
-		function(err, authToken, accessTokenSecret, results) {
+  // evernote.oAuth(evernote_callback).getOAuthAccessToken( req.session.oauthRequestToken, 
+		// req.session.oauthRequestTokenSecret, 
+		// req.query.oauth_verifier, 
+		// function(err, authToken, accessTokenSecret, results) {
 
-			if (err) return res.send("Error getting accessToken", 500);
+		// 	if (err) return res.send("Error getting accessToken", 500);
 			 
-			evernote.getUser(authToken, function(err, edamUser) {
+		// 	evernote.getUser(authToken, function(err, edamUser) {
 			
-				if (err) return res.send("Error getting userInfo", 500);
+		// 		if (err) return res.send("Error getting userInfo", 500);
 				
-				req.session.authToken = authToken;
-				req.session.user = edamUser;
+		// 		req.session.authToken = authToken;
+		// 		req.session.user = edamUser;
 
-	      var userId = req.session.user.id;
+	 //      var userId = req.session.user.id;
+  //       redisClient.sadd('users:' + userId, userId);
+  //       redisClient.set('users:' + userId + ':evernote:user', JSON.stringify(req.session.user));
+		// 		res.redirect('/');
+		// 	});
+  // });
+
+
+
+
+  var client = new Evernote.Client({
+    consumerKey: config.evernoteConsumerKey,
+    consumerSecret: config.evernoteConsumerSecret,
+    sandbox: config.evernoteUsedSandbox
+  });
+
+  client.getAccessToken(
+    req.session.oauthToken, 
+    req.session.oauthTokenSecret, 
+    req.param('oauth_verifier'), 
+    function(error, oauthAccessToken, oauthAccessTokenSecret, results) {
+
+
+      if (error) return res.send("Error getting accessToken", 500);
+       
+
+      
+      req.session.oauthAccessToken = oauthAccessToken;
+      req.session.oauthAccessTokenSecret = oauthAccessTokenSecret;
+
+      client.token = req.session.oauthAccessToken;
+      client.secret = req.session.oauthAccessTokenSecret;
+
+
+      client.getUserStore().getUser(oauthAccessToken, function(edamUser) {
+        
+        req.session.user = edamUser;
+
+        var userId = req.session.user.id;
         redisClient.sadd('users:' + userId, userId);
         redisClient.set('users:' + userId + ':evernote:user', JSON.stringify(req.session.user));
-				res.redirect('/');
-			});
-  });
+        res.redirect('/');
+      });
+
+
+      // if(error) {
+      //   console.log('error');
+      //   console.log(error);
+      //   res.redirect('/');
+      // } else {
+      //   // store the access token in the session
+      //   req.session.oauthAccessToken = oauthAccessToken;
+      //   req.session.oauthAccessTtokenSecret = oauthAccessTokenSecret;
+      //   req.session.edamShard = results.edam_shard;
+      //   req.session.edamUserId = results.edam_userId;
+      //   req.session.edamExpires = results.edam_expires;
+      //   req.session.edamNoteStoreUrl = results.edam_noteStoreUrl;
+      //   req.session.edamWebApiUrlPrefix = results.edam_webApiUrlPrefix;
+      //   res.redirect('/');
+      // }
+    });
+
+
 });
 
 github.authenticationCallback = function(req, res, err, token) {
@@ -689,16 +786,14 @@ app.get('/me', function(req, res){
 	if(!req.session.user)
 		return res.send('Please, provide valid authToken',401);
 	
-	evernote.getUser(req.session.user.authToken,function(err, edamUser) {
-		
-		if (err) {
-			if(err == 'EDAMUserException') return res.send(err,403);
-      return res.send(err,500);
-    } else {
-			
+
+  evernoteClient.token = req.session.oauthAccessToken;
+  evernoteClient.secret = req.session.oauthAccessTokenSecret;
+
+
+	evernoteClient.getUserStore().getUser(req.session.oauthAccessToken,function(edamUser) {
 			req.session.user = edamUser;
 			return res.send(edamUser,200);
-    }
 	});
 });
 

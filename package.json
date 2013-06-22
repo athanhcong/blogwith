@@ -14,6 +14,7 @@
     , "html" : "latest"
     , "html-md" : "latest"
     , "flow" : "latest"
+    , "evernote": "latest"
   },
   "engines": {
     "node": "0.8.14"
