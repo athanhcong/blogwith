@@ -40,6 +40,10 @@ a:active, a:hover { color: #96cC55; text-decoration:none; }
   text-align:center;
 }
 
+.container {
+  font-size: 15px;
+}
+
 .container .content.active{ display:block; }
 .container .content{
   float:left;
