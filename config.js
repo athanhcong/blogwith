@@ -3,7 +3,7 @@ module.exports = function() {
   var config = {
     evernoteConsumerKey    : 'athanhcong'
     , evernoteConsumerSecret : '661e2d2cbf120488'
-    , evernoteUsedSandbox    : true
+    , evernoteUsedSandbox    : false
   }
 
 

@@ -343,6 +343,18 @@ github.authenticationCallback = function(req, res, err, token) {
 app.get('/evernote/create-notebook', function(req, res){
 
 
+  var url_parts = url.parse(req.url, true);
+  var query = url_parts.query;
+  
+  var timezone = query.timezone;
+  console.log("timezone" + timezone);
+
+  req.session.user.timezone = timezone;
+
+  redisClient.set('users:' + req.session.user.userId + ':evernote:user', JSON.stringify(req.session.user));
+
+
+
   if(!req.session.user) return res.send('Unauthenticate',401);
   if(!req.body) return res.send('Invalid content',400);
 
@@ -590,7 +602,7 @@ var createPostWithMetadata = function(userInfo, noteGuid, callback) {
   //getNote = function(authenticationToken, guid, withContent, withResourcesData, withResourcesRecognition, withResourcesAlternateData, callback) {
   noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
     console.log('Get note for creating: - Note: ' + note.title);
-
+    note.timezone = userInfo.timezone;
     createGithubPost(userInfo.id, note, function(error, data) {
       callback(error, data);
     });
@@ -630,7 +642,7 @@ var updatePostWithMetadata = function(userInfo, noteGuid, callback) {
         });          
       } else {
         console.log('Can not find github sha. Create instead');
-        
+        note.timezone = userInfo.timezone;
         createGithubPost(userInfo.id, note, function(err, data) {
           callback(err, data);
         });
