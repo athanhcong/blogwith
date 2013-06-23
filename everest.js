@@ -362,10 +362,16 @@ app.get('/evernote/create-notebook', function(req, res){
 
   req.session.user.timezoneOffset = timezone;
 
-  redisClient.set('users:' + req.session.user.userId + ':evernote:user', JSON.stringify(req.session.user));
+  redisClient.set('users:' + req.session.user.id + ':evernote:user', JSON.stringify(req.session.user));
 
-  console.log(req.session.user);
+  console.log('users:' + req.session.user.id + ':evernote:user');
+  console.log(JSON.stringify(req.session.user));
 
+  console.log(JSON.stringify(req.session.user));
+
+  var result = redisClient.get('users:' + req.session.user.id + ':evernote:user', function(err, data){
+    console.log('redis get: ' + data);
+  });
 
   if(!req.session.user) return res.send('Unauthenticate',401);
   if(!req.body) return res.send('Invalid content',400);
@@ -827,7 +833,7 @@ app.get('/me', function(req, res){
 	if(!req.session.user)
 		return res.send('Please, provide valid authToken',401);
 
-  return res.send(req.session.user,200);
+  // return res.send(req.session.user,200);
 
 
   // var userStore = new Evernote.Client({token: req.session.oauthAccessToken}).getUserStore();
@@ -836,6 +842,12 @@ app.get('/me', function(req, res){
   // 		req.session.user = edamUser;
   // 		return res.send(edamUser,200);
   // });
+
+  var result = redisClient.get('users:' + req.session.user.id + ':evernote:user', function(err, data) {
+    var edamUser = JSON.parse(data);
+    return res.send(edamUser,200); 
+  });
+
 });
 
 app.get('/note', function(req, res){
