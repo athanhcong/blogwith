@@ -364,6 +364,7 @@ app.get('/evernote/create-notebook', function(req, res){
 
   redisClient.set('users:' + req.session.user.userId + ':evernote:user', JSON.stringify(req.session.user));
 
+  console.log(req.session.user);
 
 
   if(!req.session.user) return res.send('Unauthenticate',401);
@@ -626,6 +627,8 @@ var createPostWithMetadata = function(userInfo, noteGuid, callback) {
 
 var updatePostWithMetadata = function(userInfo, noteGuid, callback) {
   console.log('updatePostWithMetadata');
+
+  console.log(userInfo);
 
   var noteStore = EvernoteClient(userInfo.oauthAccessToken).getNoteStore();
 
