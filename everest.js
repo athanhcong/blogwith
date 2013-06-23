@@ -568,10 +568,15 @@ app.get('/evernote/sync', function(req, res){
 
         var newNotes = notesMetadata.notes;
         
-        flow.serialForEach(newNotes, function(note) {
-          checkUpdateForPost(req, note, this);
-        },function() {
-          // console.log("DONE: syncNotesMetadata");
+
+        var result = redisClient.get('users:' + userId + ':evernote:user', function(err, data) {
+          var userInfo = JSON.parse(data);
+          flow.serialForEach(newNotes, function(note) {
+            checkUpdateForPost(userInfo, note, this);
+          },function() {
+            // console.log("DONE: syncNotesMetadata");
+          });
+
         });
       };
     }
@@ -591,8 +596,7 @@ app.get('/evernote/sync', function(req, res){
 
 //////////////
 
-var checkUpdateForPost = function(req, note, callback) {
-  var userInfo = req.session.user;
+var checkUpdateForPost = function(userInfo, note, callback) {
   var userId = userInfo.id;
   var result = redisClient.get('users:' + userId + ':posts:' + note.guid + ':updated', function(err, updated) {
 
@@ -680,11 +684,13 @@ var initBlogWithNotesMetadata = function(req, res, notesMetadata) {
   console.log('initBlogWithNotesMetadata');
 
   var newNotes = notesMetadata.notes;
-        
-  flow.serialForEach(newNotes, function(note) {
-    checkUpdateForPost(req.session.user, note, this);
-  },function() {
-    // console.log("DONE: syncNotesMetadata");
+  var result = redisClient.get('users:' + userId + ':evernote:user', function(err, data) {
+    var userInfo = JSON.parse(data);
+    flow.serialForEach(newNotes, function(note) {
+      checkUpdateForPost(userInfo, note, this);
+    },function() {
+      // console.log("DONE: syncNotesMetadata");
+    });
   });
 }
 
