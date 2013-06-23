@@ -647,6 +647,7 @@ var updatePostWithMetadata = function(userInfo, noteGuid, callback) {
         var sha = githubCommit.content.sha;
         console.log('Updating github file with SHA: ' + sha);  
         updateGithubPost(userInfo.id, sha , note, function(err, data) {
+          console.log(err);
           callback(err, data);
         });          
       } else {
@@ -716,7 +717,7 @@ var updateGithubPost = function(userId, githubSha, note, callback){
     repo.updateGithubPost(githubSha, note, function(err, data) {
       // Save to database
       if (err) {
-
+        console.log(err);
       } else if (data) {
         var guid = note.guid;
         redisClient.set('users:' + userId + ':posts:' + guid + ':note', JSON.stringify(note));
