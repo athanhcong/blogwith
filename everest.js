@@ -50,17 +50,10 @@ var RedisStore = require('connect-redis')(express)
                             });
 
 var Evernote = require('evernote').Evernote;
-var EvernoteClient = function(oauthAccessToken) {
-  return new Evernote.Client(
-  {  consumerKey: config.evernoteConsumerKey
-    , consumerSecret: config.evernoteConsumerSecret
-    , sandbox: config.evernoteUsedSandbox
-    ,token: oauthAccessToken
-  });
-}
 
- 
-var github = require('./lib/github')
+var EvernoteLib = require('./lib/evernote')
+
+var GithubLib = require('./lib/github')
   , url = require('url');
 
 
@@ -94,7 +87,8 @@ app.configure(function(){
 
   app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 
-  app.use(github);
+  app.use(GithubLib);
+  app.use(EvernoteLib);
 
 });
 
@@ -136,143 +130,21 @@ app.get("/login", function (req, res) {
 //   res.render("index.html");
 // });
 
+
 //===================================================
-//								Authentications
+//                Authentications
 //===================================================
 
-app.all('/authentication', function(req, res){
-	
-	var evernote_callback = config.serverUrl + '/authentication/callback';
-	
-  // evernote.oAuth(evernote_callback).getOAuthRequestToken( function(error, oauthToken, oauthTokenSecret, results){
-		
-		// if (error) return res.send("Error getting OAuth request token : " + util.inspect(error), 500);
 
-  //   req.session.oauthRequestToken = oauthToken;
-  //   res.redirect( evernote.oAuthRedirectUrl(oauthToken) );      
-  // });
+EvernoteLib.authenticationCallback = function(req, res, data, token) {
+  console.log("Evernote Callback to Express");
 
+  var userId = req.session.user.id;
+  redisClient.sadd('users:' + userId, userId);
+  redisClient.set('users:' + userId + ':evernote:user', JSON.stringify(req.session.user));
+}
 
-  var client = new Evernote.Client({
-    consumerKey: config.evernoteConsumerKey,
-    consumerSecret: config.evernoteConsumerSecret,
-    sandbox: config.evernoteUsedSandbox
-  });
-
-  // console.log (JSON.stringify({
-  //   consumerKey: config.evernoteConsumerKey,
-  //   consumerSecret: config.evernoteConsumerKey,
-  //   sandbox: config.evernoteUsedSandbox
-  // }));
-  client.getRequestToken(evernote_callback, function(error, oauthToken, oauthTokenSecret, results){
-    if (error) return res.send("Error getting OAuth request token : " + util.inspect(error), 500);
-
-    if(error) {
-      req.session.error = JSON.stringify(error);
-      res.redirect('/');
-    }
-    else { 
-
-      req.session.oauthRequestToken = oauthToken; // Old code
-
-      // store the tokens in the session
-      req.session.oauthToken = oauthToken;
-      req.session.oauthTokenSecret = oauthTokenSecret;
-
-
-
-      // redirect the user to authorize the token
-      res.redirect(client.getAuthorizeUrl(oauthToken));
-    }
-  });  
-
-});
-
-app.all('/authentication/callback', function(req, res){
-	
-	// var evernote_callback = config.serverUrl +'/evernote/authentication/callback';
-		
-  // evernote.oAuth(evernote_callback).getOAuthAccessToken( req.session.oauthRequestToken, 
-		// req.session.oauthRequestTokenSecret, 
-		// req.query.oauth_verifier, 
-		// function(err, authToken, accessTokenSecret, results) {
-
-		// 	if (err) return res.send("Error getting accessToken", 500);
-			 
-		// 	evernote.getUser(authToken, function(err, edamUser) {
-			
-		// 		if (err) return res.send("Error getting userInfo", 500);
-				
-		// 		req.session.authToken = authToken;
-		// 		req.session.user = edamUser;
-
-	 //      var userId = req.session.user.id;
-  //       redisClient.sadd('users:' + userId, userId);
-  //       redisClient.set('users:' + userId + ':evernote:user', JSON.stringify(req.session.user));
-		// 		res.redirect('/');
-		// 	});
-  // });
-
-
-
-
-  var client = new Evernote.Client({
-    consumerKey: config.evernoteConsumerKey,
-    consumerSecret: config.evernoteConsumerSecret,
-    sandbox: config.evernoteUsedSandbox
-  });
-
-  client.getAccessToken(
-    req.session.oauthToken, 
-    req.session.oauthTokenSecret, 
-    req.param('oauth_verifier'), 
-    function(error, oauthAccessToken, oauthAccessTokenSecret, results) {
-
-
-      if (error) return res.send("Error getting accessToken", 500);
-       
-
-      
-      req.session.oauthAccessToken = oauthAccessToken;
-      req.session.oauthAccessTokenSecret = oauthAccessTokenSecret;
-
-      client.token = req.session.oauthAccessToken;
-
-      client.getUserStore().getUser(oauthAccessToken, function(edamUser) {
-        
-        edamUser.oauthAccessToken = oauthAccessToken;
-        edamUser.oauthAccessTokenSecret = oauthAccessTokenSecret;
-        
-        req.session.user = edamUser;
-
-        var userId = req.session.user.id;
-        redisClient.sadd('users:' + userId, userId);
-        redisClient.set('users:' + userId + ':evernote:user', JSON.stringify(req.session.user));
-        res.redirect('/');
-      });
-
-
-      // if(error) {
-      //   console.log('error');
-      //   console.log(error);
-      //   res.redirect('/');
-      // } else {
-      //   // store the access token in the session
-      //   req.session.oauthAccessToken = oauthAccessToken;
-      //   req.session.oauthAccessTtokenSecret = oauthAccessTokenSecret;
-      //   req.session.edamShard = results.edam_shard;
-      //   req.session.edamUserId = results.edam_userId;
-      //   req.session.edamExpires = results.edam_expires;
-      //   req.session.edamNoteStoreUrl = results.edam_noteStoreUrl;
-      //   req.session.edamWebApiUrlPrefix = results.edam_webApiUrlPrefix;
-      //   res.redirect('/');
-      // }
-    });
-
-
-});
-
-github.authenticationCallback = function(req, res, err, token) {
+GithubLib.authenticationCallback = function(req, res, err, token) {
   console.log("Github Callback to Express");
 
   var userId = req.session.user.id;
@@ -282,7 +154,7 @@ github.authenticationCallback = function(req, res, err, token) {
   req.session.github = {};
   req.session.github.authToken = token;
   
-  var _ghClient = github.apiClient();
+  var _ghClient = GithubLib.apiClient();
   _ghClient.token = token;
   var _ghMe = _ghClient.me();
   _ghMe.info(function(err, data) {
@@ -388,7 +260,7 @@ app.get('/evernote/create-notebook', function(req, res){
     } else {
       var notebookName = "Blog with Evernote";
 
-      var noteStore = EvernoteClient(req.session.oauthAccessToken).getNoteStore();
+      var noteStore = EvernoteLib.Client(req.session.oauthAccessToken).getNoteStore();
       // Check for note books
       noteStore.listNotebooks(req.session.oauthAccessToken, function(data) {
         console.log("Retrieved notebooks: " + data.length +  JSON.stringify(data));
@@ -504,36 +376,19 @@ app.get('/evernote/sync', function(req, res){
     console.log('notebookGuid ' + notebookGuid);
     
 
-    //NoteStoreClient.prototype.findNotesMetadata = function(authenticationToken, filter, offset, maxNotes, resultSpec, callback) {
-    var noteStore = EvernoteClient(req.session.oauthAccessToken).getNoteStore();
 
-    var noteFilter = new Evernote.NoteFilter({notebookGuid : notebookGuid});
-    var resultSpec = new Evernote.NotesMetadataResultSpec(
-      { includeTitle : true
-      , includeContentLength: true
-      , includeCreated: true
-      , includeUpdated: true
-      , includeDeleted: true
-      , includeUpdateSequenceNum: true
-      , includeTagGuids: true
-      , includeAttributes: true
-      , includeLargestResourceMime : true
-      , includeLargestResourceSize: true});
-
-    resultSpec.includeTitle = true;
-    console.log ("resultSpec");
-    console.log (resultSpec);
-    noteStore.findNotesMetadata(req.session.oauthAccessToken, noteFilter, 0, 50, resultSpec, 
-      function(noteList) {
+    EvernoteLib.findNotesMetadata(req.session.oauthAccessToken, {notebookGuid : notebookGuid}, function(error, noteList) {
+      if (error) {
+        console.log(error);
+        res.send(error,500);
+      } else {
         console.log(" Got Notes List: " + JSON.stringify(noteList));
         syncNotesMetadata(req, res, noteList, function(err, data){
           return res.send(noteList,200);
         });
-    }, function onerror(error) {
-        console.log(error);
-        res.send(error,500);
-        
-      });
+      }
+    });
+
   });
 
 
@@ -567,7 +422,6 @@ app.get('/evernote/sync', function(req, res){
         // };
 
         var newNotes = notesMetadata.notes;
-        
 
         var result = redisClient.get('users:' + userId + ':evernote:user', function(err, data) {
           var userInfo = JSON.parse(data);
@@ -605,11 +459,11 @@ var checkUpdateForPost = function(userInfo, note, callback) {
     if (!updated) {
       console.log('New post: ' + note.title);
 
-      createPostWithMetadata(userInfo, note.guid, callback);
+      createPostWithMetadata(userInfo, note.guid, null, callback);
     } else if (note.updated != updated) {
       // update note
       console.log('Update post: ' + note.title);
-      updatePostWithMetadata(userInfo, note.guid, callback);
+      updatePostWithMetadata(userInfo, note.guid, null, callback);
     } else {
       console.log('Old post: ' + note.title);
       callback(null);
@@ -618,12 +472,20 @@ var checkUpdateForPost = function(userInfo, note, callback) {
 }
 
 
-var createPostWithMetadata = function(userInfo, noteGuid, callback) {
-  var noteStore = EvernoteClient(userInfo.oauthAccessToken).getNoteStore();
+var createPostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGuid, callback) {
+  var noteStore = EvernoteLib.Client(userInfo.oauthAccessToken).getNoteStore();
   
   //getNote = function(authenticationToken, guid, withContent, withResourcesData, withResourcesRecognition, withResourcesAlternateData, callback) {
-  noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
-    console.log('Get note for creating: - Note: ' + note.title);
+  noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, true, true, true, function(note) {
+    // console.log('Get note for creating: - Note: ' + note.title);
+    console.log('Get note for creating: - Note: ' + JSON.stringify(note));
+
+    if (validateWithNotebookGuid && note.notebookGuid != validateWithNotebookGuid) {
+      console.log("Validate notebook failed! " + note.notebookGuid + " vs " + validateWithNotebookGuid);
+      callback("Validate notebook failed!");
+      return;
+    };
+
     note.timezoneOffset = userInfo.timezoneOffset;
     note.timezone = userInfo.timezone;
     createGithubPost(userInfo.id, note, function(error, data) {
@@ -635,18 +497,24 @@ var createPostWithMetadata = function(userInfo, noteGuid, callback) {
   });
 }
 
-var updatePostWithMetadata = function(userInfo, noteGuid, callback) {
-  console.log('updatePostWithMetadata');
+var updatePostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGuid, callback) {
+  console.log('updatePostWithMetadata ' + noteGuid);
 
   console.log(userInfo);
 
-  var noteStore = EvernoteClient(userInfo.oauthAccessToken).getNoteStore();
+  var noteStore = EvernoteLib.Client(userInfo.oauthAccessToken).getNoteStore();
 
-  noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
+  noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, true, true, true, function(note) {
     
     console.log('Get note for updating: Note: ' + JSON.stringify(note));
 
     console.log('Get note for updating: Note: ' + note.title);
+
+    if (validateWithNotebookGuid && note.notebookGuid != validateWithNotebookGuid) {
+      console.log("Validate notebook failed! " + note.notebookGuid + " vs " + validateWithNotebookGuid);
+      callback("Validate notebook failed!");
+      return;
+    };
     
     // redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
     var userId = userInfo.id;
@@ -683,9 +551,12 @@ var updatePostWithMetadata = function(userInfo, noteGuid, callback) {
 var initBlogWithNotesMetadata = function(req, res, notesMetadata) {
   console.log('initBlogWithNotesMetadata');
 
-  var newNotes = notesMetadata.notes;
+  var userId = req.session.user.id;
+
   var result = redisClient.get('users:' + userId + ':evernote:user', function(err, data) {
     var userInfo = JSON.parse(data);
+
+    var newNotes = notesMetadata.notes;
     flow.serialForEach(newNotes, function(note) {
       checkUpdateForPost(userInfo, note, this);
     },function() {
@@ -759,7 +630,7 @@ var githubRepoWithUserId = function(userId, callback) {
 
     githubRepoName = githubUsername + '/' + githubPageData.repoName;
 
-    var _ghClient = github.apiClient();
+    var _ghClient = GithubLib.apiClient();
     _ghClient.token = githubPageData.authToken;
     var _ghRepo = _ghClient.repo(githubRepoName);
 
@@ -795,26 +666,46 @@ app.get('/evernote/webhook', function(req, res){
 
   //redisClient.set('users:' + userId + ':evernote:user', JSON.stringify(req.session.user));
 
-  var result = redisClient.get('users:' + userId + ':evernote:user', function(err, data) {
 
+  var result = redisClient.get('users:' + userId + ':evernote:user', function(err, userData) {
 
     if (err) {
       console.log('Can not find user ' + userId);
       res.end('');
       return;
     }
+    var userInfo = JSON.parse(userData);
+    console.log("user info: " + JSON.stringify(userInfo));
 
-    var userInfo = JSON.parse(data);
-    console.log(userInfo);
-    if (userInfo) {
-      if (reason == 'create') {
-        createPostWithMetadata(userInfo, noteGuid, function(err, data){});
-      } else if (reason == 'update') {
-        updatePostWithMetadata(userInfo, noteGuid, function(err, data){});
+    var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, notebookData) {
+
+      if (err) {
+        console.log('Can not find notebook for ' + userId);
+        res.end('');
+        return;
       }
 
-      res.end('', 200);      
-    };
+      var notebook = JSON.parse(notebookData);
+
+      if (userInfo) {
+        if (reason == 'create') {
+          createPostWithMetadata(userInfo, noteGuid, notebook.guid, function(error, data){
+            if (error) {
+              console.log(error);
+            };
+          });
+        } else if (reason == 'update') {
+          updatePostWithMetadata(userInfo, noteGuid, notebook.guid, function(error, data){
+            if (error) {
+              console.log(error);
+            };
+          });
+        }
+
+        res.end('', 200);      
+      };
+
+    });
 
   });
 
@@ -822,22 +713,10 @@ app.get('/evernote/webhook', function(req, res){
 
 
 
-/////////
-
-
-app.all('/logout', function(req, res){
-	
-	var callback = req.query.callback;
-	req.session.authToken = null;
-	req.session.user = null;
-	
-	return res.send({ success:true });
-});
-
 app.get('/me', function(req, res){
-	
-	if(!req.session.user)
-		return res.send('Please, provide valid authToken',401);
+  
+  if(!req.session.user)
+    return res.send('Please, provide valid authToken',401);
 
   // return res.send(req.session.user,200);
 
@@ -845,8 +724,8 @@ app.get('/me', function(req, res){
   // var userStore = new Evernote.Client({token: req.session.oauthAccessToken}).getUserStore();
 
   // userStore.getUser(function(edamUser) {
-  // 		req.session.user = edamUser;
-  // 		return res.send(edamUser,200);
+  //    req.session.user = edamUser;
+  //    return res.send(edamUser,200);
   // });
 
   var result = redisClient.get('users:' + req.session.user.id + ':evernote:user', function(err, data) {
@@ -855,20 +734,6 @@ app.get('/me', function(req, res){
   });
 
 });
-
-app.get('/note', function(req, res){
-  
-  if(!req.session.user)
-    return res.send('Please, provide valid authToken',401);
-  
-
-  var noteStore = EvernoteClient(req.session.oauthAccessToken).getNoteStore();
-  //getNote = function(authenticationToken, guid, withContent, withResourcesData, withResourcesRecognition, withResourcesAlternateData, callback) {
-  noteStore.getNote(req.session.oauthAccessToken, "9af28b07-e4f8-4433-bae0-1d6aac37c699", false, false, false, false, function(note) {
-      return res.send(note,200);
-  });
-});
-
 
 server.listen(config.serverPort, function(){
   console.log("Express server listening on port " + config.serverPort)

@@ -1,12 +1,6 @@
 
 module.exports = function() {
-  var config = {
-    evernoteConsumerKey    : 'athanhcong'
-    , evernoteConsumerSecret : '661e2d2cbf120488'
-    , evernoteUsedSandbox    : false
-  }
-
-
+config = {};
   var nodeEnv = process.env.NODE_ENV;
   if (nodeEnv == 'production') {
       config.serverPort = process.env.PORT;
@@ -18,7 +12,6 @@ module.exports = function() {
       config['serverUrl'] = 'http://localhost:' + config.serverPort;
       config['githubClientId'] = 'd40e218e245efc6cedb1';
       config['githubClientSecret'] = 'a026298fd821e95083fe4a1c9e640494088e741c';
-      config.evernoteUsedSandbox = true;
   };
 
   config['githubRepo'] = process.env.BLOG_REPOSITORY;
