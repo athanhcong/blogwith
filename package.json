@@ -9,7 +9,6 @@
     , "connect-redis" : "latest"
     , "octonode" : "latest"
     , "thrift" : "latest"
-    , "enml-js" : "latest"
     , "ejs": "latest"
     , "html" : "latest"
     , "html-md" : "latest"
