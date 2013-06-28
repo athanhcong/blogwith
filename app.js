@@ -286,6 +286,33 @@ app.get('/evernote/create-notebook', function(req, res){
   }
   // end createNotebook
 
+  var updateNotebook = function(notebook) {
+
+    var notebookPublishing = new Evernote.Publishing(
+      {
+        publicDescription: "Blog with Evernote"
+        , uri : "blog-with-evernote"
+      });
+
+    notebook.published = true;
+    notebook.publishing = notebookPublishing;
+
+    var noteStore1 = EvernoteLib.Client(req.session.oauthAccessToken).getNoteStore();
+    noteStore1.updateNotebook(req.session.oauthAccessToken, notebook, 
+      function onsuccess(data) {
+        console.log("Updated Notebook: Guid " + data.guid);
+        redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
+        
+        return res.redirect('/');
+      },
+      function onerror(error) {
+        console.log("Update Notebook: Error " + error);
+        res.send(error,500);
+        
+      });
+  }
+  // end createNotebook
+
   var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, notebookData){
     if (notebookData) {
       var notebook = JSON.parse(notebookData);
@@ -294,8 +321,16 @@ app.get('/evernote/create-notebook', function(req, res){
       noteStore.getNotebook(req.session.oauthAccessToken, notebook.guid, 
         function(serverNotebook) {
           console.log("Get Notebook: " + JSON.stringify(serverNotebook));
-          // update notebook info        
-          redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
+          // update notebook info
+          if (serverNotebook.published) {
+            redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
+            return res.redirect('/');
+          } else {
+            //NoteStoreClient.prototype.updateNotebook = function(authenticationToken, notebook, callback) {
+            console.log("Updating notebook");
+            updateNotebook(serverNotebook);
+          };
+          
         },
         function onerror(error) {
           if (error instanceof Evernote.EDAMNotFoundException) {
