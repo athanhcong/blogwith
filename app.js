@@ -46,7 +46,7 @@ var RedisStore = require('connect-redis')(express)
   , session = express.session({secret: SECRET
                              , key: KEY
                              , store: store
-                             ,cookie: { secure: false, maxAge: 86400000 }
+                             ,cookie: { secure: false, expires: new Date(Date.now() + (365 * 86400 * 1000))  }
                             });
 
 var Evernote = require('evernote').Evernote;
@@ -225,7 +225,6 @@ GithubLib.authenticationCallback = function(req, res, err, token) {
 
 app.get('/evernote/create-notebook', function(req, res){
 
-
   var url_parts = url.parse(req.url, true);
   var query = url_parts.query;
   
@@ -253,14 +252,55 @@ app.get('/evernote/create-notebook', function(req, res){
 
   console.log("/evernote/create-notebook: " + userId);
 
-  var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, notebook){
-    if (notebook) {
-      console.log(JSON.stringify(notebook));
+  // Create notebook
+  var notebookName = "Blog with Evernote";
+  var noteStore = EvernoteLib.Client(req.session.oauthAccessToken).getNoteStore();
+
+  var createNotebook = function() {
+    var notebook = new Evernote.Notebook({"name": notebookName});
+
+    var noteStore1 = EvernoteLib.Client(req.session.oauthAccessToken).getNoteStore();
+    noteStore1.createNotebook(req.session.oauthAccessToken, notebook, 
+      function onsuccess(data) {
+        redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
+        
+        return res.redirect('/');
+      },
+      function onerror(error) {
+        console.log("Creating Notebook: Error " + error);
+        res.send(error,500);
+        
+      });
+  }
+  // end createNotebook
+
+  var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, notebookData){
+    if (notebookData) {
+      var notebook = JSON.parse(notebookData);
+      // console.log(JSON.stringify(notebook));
+      //NoteStoreClient.prototype.getNotebook = function(authenticationToken, guid, callback) {
+      noteStore.getNotebook(req.session.oauthAccessToken, notebook.guid, 
+        function(serverNotebook) {
+          console.log("Get Notebook: " + JSON.stringify(serverNotebook));
+          // update notebook info        
+          redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
+        },
+        function onerror(error) {
+          if (error instanceof Evernote.EDAMNotFoundException) {
+            console.log("Not found Notebook");
+            createNotebook();
+          } else {
+            console.log("Get Notebook: Error " + error);          
+            res.send(error,500);  
+          }
+        }
+      );
+
       return res.redirect('/');
     } else {
-      var notebookName = "Blog with Evernote";
 
-      var noteStore = EvernoteLib.Client(req.session.oauthAccessToken).getNoteStore();
+
+
       // Check for note books
       noteStore.listNotebooks(req.session.oauthAccessToken, function(data) {
         console.log("Retrieved notebooks: " + data.length +  JSON.stringify(data));
@@ -288,18 +328,7 @@ app.get('/evernote/create-notebook', function(req, res){
 
         } else {
           console.log("No notebook. Creating one");
-
-          var notebook = new Evernote.Notebook({"name": notebookName});
-      
-          noteStore.createNotebook(req.session.oauthAccessToken, notebook, function(data) {
-            redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
-            return res.redirect('/');
-          },
-          function onerror(error) {
-            console.log("Creating Notebook: Error " + error);
-            res.send(error,500);
-            
-          });
+          createNotebook();
         };
       },
       function onerror(error) {
@@ -311,6 +340,8 @@ app.get('/evernote/create-notebook', function(req, res){
 
   });
 });
+
+
 
 
 // app.get('/evernote/sync', function(req, res){
@@ -477,8 +508,8 @@ var createPostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGu
   
   //getNote = function(authenticationToken, guid, withContent, withResourcesData, withResourcesRecognition, withResourcesAlternateData, callback) {
   noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, true, true, true, function(note) {
-    // console.log('Get note for creating: - Note: ' + note.title);
-    console.log('Get note for creating: - Note: ' + JSON.stringify(note));
+    console.log('Get note for creating: - Note: ' + note.title);
+    // console.log('Get note for creating: - Note: ' + JSON.stringify(note));
 
     if (validateWithNotebookGuid && note.notebookGuid != validateWithNotebookGuid) {
       console.log("Validate notebook failed! " + note.notebookGuid + " vs " + validateWithNotebookGuid);
