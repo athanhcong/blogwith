@@ -500,13 +500,13 @@ var createPostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGu
 var updatePostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGuid, callback) {
   console.log('updatePostWithMetadata ' + noteGuid);
 
-  console.log(userInfo);
+  // console.log(userInfo);
 
   var noteStore = EvernoteLib.Client(userInfo.oauthAccessToken).getNoteStore();
 
   noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, true, true, true, function(note) {
     
-    console.log('Get note for updating: Note: ' + JSON.stringify(note));
+    // console.log('Get note for updating: Note: ' + JSON.stringify(note));
 
     console.log('Get note for updating: Note: ' + note.title);
 
@@ -526,8 +526,14 @@ var updatePostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGu
       };
 
       if (data) {
+        // console.log(data);
         var githubCommit = JSON.parse(data);
-        var sha = githubCommit.content.sha;
+
+        var sha;
+        if (githubCommit.content) {
+          sha = githubCommit.content.sha;
+        };
+        
         console.log('Updating github file with SHA: ' + sha);  
         updateGithubPost(userInfo.id, sha , note, function(err, data) {
           console.log(err);
@@ -576,7 +582,8 @@ var createGithubPost = function(userId, note, callback){
 
     console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
 
-    repo.createGithubPost(note, function(err, data) {
+    var noteContent = EvernoteLib.contentInMarkdown(note);
+    repo.createGithubPost({note: note, content: noteContent}, function(err, data) {
       // Save to database
       if (err) {
       } else if (data) {
@@ -603,7 +610,9 @@ var updateGithubPost = function(userId, githubSha, note, callback){
 
     console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
 
-    repo.updateGithubPost(githubSha, note, function(err, data) {
+    var noteContent = EvernoteLib.contentInMarkdown(note);
+
+    repo.updateGithubPost(githubSha, {note: note, content: noteContent} , function(err, data) {
       // Save to database
       if (err) {
         console.log(err);
