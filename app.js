@@ -257,11 +257,23 @@ app.get('/evernote/create-notebook', function(req, res){
   var noteStore = EvernoteLib.Client(req.session.oauthAccessToken).getNoteStore();
 
   var createNotebook = function() {
-    var notebook = new Evernote.Notebook({"name": notebookName});
+
+    var notebookPublishing = new Evernote.Publishing(
+      {
+        publicDescription: "Blog with Evernote"
+        , uri : "blog-with-evernote"
+      });
+
+    var notebook = new Evernote.Notebook({
+      name: notebookName
+      , published : true
+      , publishing : notebookPublishing
+    });
 
     var noteStore1 = EvernoteLib.Client(req.session.oauthAccessToken).getNoteStore();
     noteStore1.createNotebook(req.session.oauthAccessToken, notebook, 
       function onsuccess(data) {
+        console.log("Created Notebook: Guid " + data.guid);
         redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
         
         return res.redirect('/');
@@ -296,7 +308,7 @@ app.get('/evernote/create-notebook', function(req, res){
         }
       );
 
-      return res.redirect('/');
+      // return res.redirect('/');
     } else {
 
 
@@ -519,7 +531,7 @@ var createPostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGu
 
     note.timezoneOffset = userInfo.timezoneOffset;
     note.timezone = userInfo.timezone;
-    createGithubPost(userInfo.id, note, function(error, data) {
+    createGithubPost(userInfo, note, function(error, data) {
       callback(error, data);
     });
 
@@ -566,7 +578,7 @@ var updatePostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGu
         };
         
         console.log('Updating github file with SHA: ' + sha);  
-        updateGithubPost(userInfo.id, sha , note, function(err, data) {
+        updateGithubPost(userInfo, sha , note, function(err, data) {
           console.log(err);
           callback(err, data);
         });          
@@ -574,7 +586,7 @@ var updatePostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGu
         console.log('Can not find github sha. Create instead');
         note.timezoneOffset = userInfo.timezoneOffset;
         note.timezone = userInfo.timezone;
-        createGithubPost(userInfo.id, note, function(err, data) {
+        createGithubPost(userInfo, note, function(err, data) {
           callback(err, data);
         });
       };
@@ -602,8 +614,9 @@ var initBlogWithNotesMetadata = function(req, res, notesMetadata) {
   });
 }
 
-var createGithubPost = function(userId, note, callback){
+var createGithubPost = function(userInfo, note, callback){
 
+  var userId = userInfo.id;
   githubRepoWithUserId(userId, function(err, repo) {
 
     if (err) {
@@ -613,7 +626,7 @@ var createGithubPost = function(userId, note, callback){
 
     console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
 
-    var noteContent = EvernoteLib.contentInMarkdown(note);
+    var noteContent = EvernoteLib.contentInMarkdown(userInfo, note);
     repo.createGithubPost({note: note, content: noteContent}, function(err, data) {
       // Save to database
       if (err) {
@@ -631,8 +644,9 @@ var createGithubPost = function(userId, note, callback){
 };
 
 // Update a file in github
-var updateGithubPost = function(userId, githubSha, note, callback){
+var updateGithubPost = function(userInfo, githubSha, note, callback){
 
+  var userId = userInfo.id;
   githubRepoWithUserId(userId, function(err, repo) {
     if (err) {
       callback(err);
@@ -641,7 +655,7 @@ var updateGithubPost = function(userId, githubSha, note, callback){
 
     console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
 
-    var noteContent = EvernoteLib.contentInMarkdown(note);
+    var noteContent = EvernoteLib.contentInMarkdown(userInfo, note);
 
     repo.updateGithubPost(githubSha, {note: note, content: noteContent} , function(err, data) {
       // Save to database
