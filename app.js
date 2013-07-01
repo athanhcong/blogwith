@@ -236,9 +236,6 @@ app.get('/evernote/create-notebook', function(req, res){
   redisClient.set('users:' + req.session.user.id + ':evernote:user', JSON.stringify(req.session.user));
 
   console.log('users:' + req.session.user.id + ':evernote:user');
-  console.log(JSON.stringify(req.session.user));
-
-  console.log(JSON.stringify(req.session.user));
 
   var result = redisClient.get('users:' + req.session.user.id + ':evernote:user', function(err, data){
     console.log('redis get: ' + data);
@@ -313,10 +310,49 @@ app.get('/evernote/create-notebook', function(req, res){
   }
   // end createNotebook
 
+  var createNotebookIfNeeded = function() {
+    // Check for note books
+    noteStore.listNotebooks(req.session.oauthAccessToken, function(data) {
+      console.log("Retrieved notebooks: " + data.length +  JSON.stringify(data));
+
+      var foundNotebook;
+      if (data) {
+        // Check for "Blog with Evernote"
+        for (var i = data.length - 1; i >= 0; i--) {
+          var aNotebook = data[i];
+          console.log("Notebook " + JSON.stringify(aNotebook));
+          console.log("Notebook name" +  aNotebook.name);
+          if (aNotebook.name == notebookName) {
+            console.log("Found name" + aNotebook.name);
+
+            foundNotebook = aNotebook;
+            break;
+          };
+        };
+      };
+
+      if (foundNotebook) {
+        console.log("Found notebook");
+        redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(foundNotebook));
+        return res.redirect('/');
+
+      } else {
+        console.log("No notebook. Creating one");
+        createNotebook();
+      };
+    },
+    function onerror(error) {
+      console.log(error);
+      res.send(error,500);
+      
+    }); // list notebooks
+  }
+
   var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, notebookData){
     if (notebookData) {
       var notebook = JSON.parse(notebookData);
-      // console.log(JSON.stringify(notebook));
+      console.log("Notebook: " + JSON.stringify(notebook));
+      console.log(req.session.oauthAccessToken);
       //NoteStoreClient.prototype.getNotebook = function(authenticationToken, guid, callback) {
       noteStore.getNotebook(req.session.oauthAccessToken, notebook.guid, 
         function(serverNotebook) {
@@ -333,56 +369,22 @@ app.get('/evernote/create-notebook', function(req, res){
           
         },
         function onerror(error) {
-          if (error instanceof Evernote.EDAMNotFoundException) {
-            console.log("Not found Notebook");
-            createNotebook();
-          } else {
-            console.log("Get Notebook: Error " + error);          
-            res.send(error,500);  
-          }
+          console.log("Get Notebook: Error " + error); 
+          // if (error instanceof Evernote.EDAMNotFoundException) {
+            // console.log("Not found Notebook");
+
+            createNotebookIfNeeded();
+          // } else {
+            
+            // res.send(error,500);  
+          // }
         }
       );
 
       // return res.redirect('/');
     } else {
 
-
-
-      // Check for note books
-      noteStore.listNotebooks(req.session.oauthAccessToken, function(data) {
-        console.log("Retrieved notebooks: " + data.length +  JSON.stringify(data));
-
-        var foundNotebook;
-        if (data) {
-          // Check for "Blog with Evernote"
-          for (var i = data.length - 1; i >= 0; i--) {
-            var aNotebook = data[i];
-            console.log("Notebook " + JSON.stringify(aNotebook));
-            console.log("Notebook name" +  aNotebook.name);
-            if (aNotebook.name == notebookName) {
-              console.log("Found name" + aNotebook.name);
-
-              foundNotebook = aNotebook;
-              break;
-            };
-          };
-        };
-
-        if (foundNotebook) {
-          console.log("Found notebook");
-          redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(foundNotebook));
-          return res.redirect('/');
-
-        } else {
-          console.log("No notebook. Creating one");
-          createNotebook();
-        };
-      },
-      function onerror(error) {
-        console.log(error);
-        res.send(error,500);
-        
-      }); // list notebooks
+      createNotebookIfNeeded(); 
     }
 
   });
@@ -461,6 +463,22 @@ app.get('/evernote/sync', function(req, res){
         res.send(error,500);
       } else {
         console.log(" Got Notes List: " + JSON.stringify(noteList));
+
+        // filter based on notebook
+        var allNotes = noteList.notes;
+        var filteredNotes = [];
+
+        for (var i = allNotes.length - 1; i >= 0; i--) {
+          var note = allNotes[i];
+          if (note.notebookGuid == notebookGuid) {
+            filteredNotes.push(note);
+          } else {
+            console.log("WARNING: Found note not belong to this notebook");
+          };
+        };
+
+        noteList.notes = filteredNotes;
+
         syncNotesMetadata(req, res, noteList, function(err, data){
           return res.send(noteList,200);
         });
@@ -503,6 +521,14 @@ app.get('/evernote/sync', function(req, res){
 
         var result = redisClient.get('users:' + userId + ':evernote:user', function(err, data) {
           var userInfo = JSON.parse(data);
+          // checkUpdateForPost(userInfo, newNotes[0], this);
+          var note = newNotes[0];
+          console.log(note.guid);
+          createPostWithMetadata(userInfo, note.guid, null, function(error, data) {
+
+          });
+
+          return;
           flow.serialForEach(newNotes, function(note) {
             checkUpdateForPost(userInfo, note, this);
           },function() {
@@ -552,9 +578,9 @@ var checkUpdateForPost = function(userInfo, note, callback) {
 
 var createPostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGuid, callback) {
   var noteStore = EvernoteLib.Client(userInfo.oauthAccessToken).getNoteStore();
-  
+  console.log("createPostWithMetadata" + noteGuid);
   //getNote = function(authenticationToken, guid, withContent, withResourcesData, withResourcesRecognition, withResourcesAlternateData, callback) {
-  noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, true, true, true, function(note) {
+  noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
     console.log('Get note for creating: - Note: ' + note.title);
     // console.log('Get note for creating: - Note: ' + JSON.stringify(note));
 
@@ -566,12 +592,16 @@ var createPostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGu
 
     note.timezoneOffset = userInfo.timezoneOffset;
     note.timezone = userInfo.timezone;
+
     createGithubPost(userInfo, note, function(error, data) {
       callback(error, data);
     });
 
+
+
   }, function onerror(error) {
-    callback(error);
+    // console.log("createPostWithMetadata" + error);
+    // callback(error);
   });
 }
 
@@ -582,7 +612,7 @@ var updatePostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGu
 
   var noteStore = EvernoteLib.Client(userInfo.oauthAccessToken).getNoteStore();
 
-  noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, true, true, true, function(note) {
+  noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
     
     // console.log('Get note for updating: Note: ' + JSON.stringify(note));
 
@@ -649,6 +679,19 @@ var initBlogWithNotesMetadata = function(req, res, notesMetadata) {
   });
 }
 
+
+var contentInMarkdown = function(userInfo, note, callback) {
+  uploadResources(userInfo, note, function(error, resources) {
+    if (!error && resources) {
+      // process the resource
+
+      var noteContent = EvernoteLib.contentInMarkdown(userInfo, note, resources);
+
+      callback(null, noteContent);
+    }
+  });
+}
+
 var createGithubPost = function(userInfo, note, callback){
 
   var userId = userInfo.id;
@@ -661,22 +704,163 @@ var createGithubPost = function(userInfo, note, callback){
 
     console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
 
-    var noteContent = EvernoteLib.contentInMarkdown(userInfo, note);
-    repo.createGithubPost({note: note, content: noteContent}, function(err, data) {
-      // Save to database
-      if (err) {
-      } else if (data) {
-        var guid = note.guid;
-        redisClient.set('users:' + userId + ':posts:' + guid + ':note', JSON.stringify(note));
-        redisClient.set('users:' + userId + ':posts:' + guid + ':updated', note.updated);
-        redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
-      };
+    contentInMarkdown(userInfo, note, function (error, noteContent) {
+      if (!error && noteContent) {
+        console.log(noteContent);
+        repo.createGithubPost({note: note, content: noteContent}, function(err, data) {
+          // Save to database
+          if (err) {
+          } else if (data) {
+            var guid = note.guid;
+            redisClient.set('users:' + userId + ':posts:' + guid + ':note', JSON.stringify(note));
+            redisClient.set('users:' + userId + ':posts:' + guid + ':updated', note.updated);
+            redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
+          };
 
-      callback(err, data);
-    });
+          callback(err, data);
+        });
+      };
+    })
+
 
   });
 };
+
+
+var uploadAResource = function (userInfo, note, resource, callback) {
+  var noteStore = EvernoteLib.Client(userInfo.oauthAccessToken).getNoteStore();
+
+  noteStore.getResourceData(userInfo.oauthAccessToken, "47d9ab45-33cd-4f50-8e9f-825f91cf1a52", 
+  // noteStore.getResourceData(userInfo.oauthAccessToken, resource.guid, 
+    function onsuccess(fileData) {
+
+      console.log("Got resource: " + fileData);
+      console.log("Got resource: " + JSON.stringify(fileData));
+
+      // Send to github
+      var fileDataBase64 = new Buffer(fileData).toString('base64');
+      // console.log(fileDataBase64);
+
+      githubRepoWithUserId(userInfo.id, function(err, repo) {
+        if (err) {
+          console.log("Get Resouce error : " + err);
+
+          callback(err);
+          return;
+        };
+
+
+
+        console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
+
+        // var noteContent = EvernoteLib.contentInMarkdown(userInfo, note);
+        var path = "images/" + note.guid + "/" 
+        // + new Date().getTime() + "/" 
+        + resource.attributes.fileName;
+
+
+        console.log('createFile: ' + path);
+
+        repo.createFile(path, fileDataBase64, function(error, data) {
+
+          console.log("uploaded file error:" + error);          
+          console.log("uploaded file" + JSON.stringify(data));
+
+          if (error) {
+            callback(error);
+          } else {
+
+            callback(null, data);
+
+          };
+          // Handle Error
+          
+          
+        });
+
+      });
+
+      //contentsCreate
+    },
+    function onerror(error) {
+      console.log("Get Resouce error : " + error);
+      callback(error);
+    });
+}
+
+var uploadResourceIfNeeded = function(userInfo, note, resource, callback, next) {
+    // Check for cached resource info
+  console.log("uploadResourceIfNeeded");
+
+  var resourceUrlKey = 'users:' + userInfo.id + ':posts:' + note.guid + ':resources:' + resource.guid + ':githubContent';
+  console.log("key: " + resourceUrlKey);
+  redisClient.get(resourceUrlKey, function(error, data) {
+
+    if (!error && data) {
+      console.log("Found resource: " + data);
+      callback(null, JSON.parse(data));
+      next();
+      return;
+    }
+
+    // Not found, then:
+    // Get resource data
+    // NoteStoreClient.prototype.getResourceData = function(authenticationToken, guid, callback)
+
+    console.log("Not Found resource: " + userInfo.oauthAccessToken + " xx " + resource.guid);
+
+    uploadAResource(userInfo, note, resource, function(error, data) {
+      console.log("uploadAResource");
+
+      if (!error && data) {
+        redisClient.set(resourceUrlKey, JSON.stringify(data));
+      };
+
+      callback(error, data);
+      next();
+
+
+    });
+
+    // Resource name for resource
+    // send resource to github
+
+    // save resource info
+
+
+    
+  });
+}
+
+var uploadResources = function(userInfo, note, callback) {
+
+  var resources = note.resources
+
+  console.log("uploadResources: " + JSON.stringify(resources));
+
+  // resource = resources[0];
+  // uploadResourceIfNeeded(userInfo, note, resource, function() {});
+
+  var uploadedResources = [];
+  flow.serialForEach(resources, 
+    function(resource) {
+      uploadResourceIfNeeded(userInfo, note, resource, function(error, data) {
+        
+        if (!error && data) {
+          console.log(data);
+          uploadedResources[resource.guid] = "/" + data.content.path;  
+        };
+        
+        // console.log(this.uploadedResouces);
+      }, this);
+    }
+    , function () {
+      console.log("Finished uploadResources flow " + JSON.stringify(uploadedResources));
+      callback(null, uploadedResources);
+    }
+  );
+
+}
 
 // Update a file in github
 var updateGithubPost = function(userInfo, githubSha, note, callback){
@@ -690,21 +874,25 @@ var updateGithubPost = function(userInfo, githubSha, note, callback){
 
     console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
 
-    var noteContent = EvernoteLib.contentInMarkdown(userInfo, note);
+    contentInMarkdown(userInfo, note, function (error, noteContent) {
+      if (!error && noteContent) {
 
-    repo.updateGithubPost(githubSha, {note: note, content: noteContent} , function(err, data) {
-      // Save to database
-      if (err) {
-        console.log(err);
-      } else if (data) {
-        var guid = note.guid;
-        redisClient.set('users:' + userId + ':posts:' + guid + ':note', JSON.stringify(note));
-        redisClient.set('users:' + userId + ':posts:' + guid + ':updated', note.updated);
-        redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
-      };
-      callback(err, data); 
+        repo.updateGithubPost(githubSha, {note: note, content: noteContent} , function(err, data) {
+          // Save to database
+          if (err) {
+            console.log(err);
+          } else if (data) {
+            var guid = note.guid;
+            redisClient.set('users:' + userId + ':posts:' + guid + ':note', JSON.stringify(note));
+            redisClient.set('users:' + userId + ':posts:' + guid + ':updated', note.updated);
+            redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
+          };
+          callback(err, data); 
+        });
+      }
     });
   });
+
 };
 
 var githubRepoWithUserId = function(userId, callback) {
