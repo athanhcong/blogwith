@@ -462,10 +462,12 @@ app.get('/evernote/sync', function(req, res){
         console.log(error);
         res.send(error,500);
       } else {
-        console.log(" Got Notes List: " + JSON.stringify(noteList));
+        
 
         // filter based on notebook
         var allNotes = noteList.notes;
+
+        console.log(" Got Notes List: " + allNotes.length);
         var filteredNotes = [];
 
         for (var i = allNotes.length - 1; i >= 0; i--) {
@@ -522,13 +524,13 @@ app.get('/evernote/sync', function(req, res){
         var result = redisClient.get('users:' + userId + ':evernote:user', function(err, data) {
           var userInfo = JSON.parse(data);
           // checkUpdateForPost(userInfo, newNotes[0], this);
-          var note = newNotes[0];
-          console.log(note.guid);
-          createPostWithMetadata(userInfo, note.guid, null, function(error, data) {
+          // var note = newNotes[0];
+          // console.log(note.guid);
+          // updatePostWithMetadata(userInfo, note.guid, null, function(error, data) {
 
-          });
-
-          return;
+          // });
+          // return;
+          
           flow.serialForEach(newNotes, function(note) {
             checkUpdateForPost(userInfo, note, this);
           },function() {
@@ -682,13 +684,17 @@ var initBlogWithNotesMetadata = function(req, res, notesMetadata) {
 
 var contentInMarkdown = function(userInfo, note, callback) {
   uploadResources(userInfo, note, function(error, resources) {
+
+
     if (!error && resources) {
       // process the resource
-
       var noteContent = EvernoteLib.contentInMarkdown(userInfo, note, resources);
-
+      // console.log("contentInMarkdown" + noteContent);
       callback(null, noteContent);
+    } else {
+      callback (error);
     }
+
   });
 }
 
@@ -730,8 +736,7 @@ var createGithubPost = function(userInfo, note, callback){
 var uploadAResource = function (userInfo, note, resource, callback) {
   var noteStore = EvernoteLib.Client(userInfo.oauthAccessToken).getNoteStore();
 
-  noteStore.getResourceData(userInfo.oauthAccessToken, "47d9ab45-33cd-4f50-8e9f-825f91cf1a52", 
-  // noteStore.getResourceData(userInfo.oauthAccessToken, resource.guid, 
+  noteStore.getResourceData(userInfo.oauthAccessToken, resource.guid, 
     function onsuccess(fileData) {
 
       console.log("Got resource: " + fileData);
@@ -790,15 +795,18 @@ var uploadAResource = function (userInfo, note, resource, callback) {
 
 var uploadResourceIfNeeded = function(userInfo, note, resource, callback, next) {
     // Check for cached resource info
-  console.log("uploadResourceIfNeeded");
 
   var resourceUrlKey = 'users:' + userInfo.id + ':posts:' + note.guid + ':resources:' + resource.guid + ':githubContent';
+
+  console.log("uploadResourceIfNeeded " + resourceUrlKey);
+
   console.log("key: " + resourceUrlKey);
   redisClient.get(resourceUrlKey, function(error, data) {
 
     if (!error && data) {
-      console.log("Found resource: " + data);
-      callback(null, JSON.parse(data));
+      var githubResource = JSON.parse(data);
+      console.log("Found resource: " + githubResource.content.path);
+      callback(null, githubResource);
       next();
       return;
     }
@@ -836,7 +844,10 @@ var uploadResources = function(userInfo, note, callback) {
 
   var resources = note.resources
 
-  console.log("uploadResources: " + JSON.stringify(resources));
+  if (resources) {
+    console.log("uploadResources: " + resources.length);  
+  };
+  
 
   // resource = resources[0];
   // uploadResourceIfNeeded(userInfo, note, resource, function() {});
@@ -846,16 +857,21 @@ var uploadResources = function(userInfo, note, callback) {
     function(resource) {
       uploadResourceIfNeeded(userInfo, note, resource, function(error, data) {
         
-        if (!error && data) {
-          console.log(data);
-          uploadedResources[resource.guid] = "/" + data.content.path;  
+        if (!error && data && data.content && data.content.path) {
+          // console.log(data);
+          var githubUrl = "/" + data.content.path;
+          uploadedResources[resource.guid] = githubUrl;  
         };
-        
-        // console.log(this.uploadedResouces);
+        console.log("uploadResourceIfNeeded: ");
+        console.log(uploadedResources);
       }, this);
     }
+    , function (error) {
+      console.log("this is weird");
+    }
     , function () {
-      console.log("Finished uploadResources flow " + JSON.stringify(uploadedResources));
+      console.log("Finished uploadResources flow: ");
+      console.log(uploadedResources);
       callback(null, uploadedResources);
     }
   );

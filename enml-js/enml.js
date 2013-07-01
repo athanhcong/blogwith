@@ -152,8 +152,13 @@
             if(attr[0] == 'height') height = attr[1];
           });
 
-          hash = BodyHashOfENMLHash(hash);
+          // hash = BodyHashOfENMLHash(hash);
+
+
           var resource = resources[hash];
+          console.log(hash);
+          console.log(resource);
+          console.log(resources);
           
           if(!resource) return;
           var resourceUrl = resource.url || resource;
