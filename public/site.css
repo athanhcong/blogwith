@@ -24,8 +24,7 @@ a:active, a:hover { color: #96cC55; text-decoration:none; }
 .top-container .account { margin-top:60px;  margin-right:210px; float:right; text-align:right;}
 .top-container .account>p{ font-size:22px; margin:0;}
 
-.container .login-panel{ margin-top:30px; margin-bottom:60px;  text-align:center; min-height:50px;}
-.container .login-panel>a{ display:block; margin:10px 200px 20px 200px; font-size:22px; padding:20px 40px 20px 40px; }
+
 .container .description{text-align:center; font-size:15px;margin-top:60px;}
 
 
@@ -41,7 +40,9 @@ a:active, a:hover { color: #96cC55; text-decoration:none; }
 }
 
 .container {
-  font-size: 15px;
+  /*font-size: 15px;*/
+  font-size: 22px;
+  line-height: 30px;
 }
 
 .container .content.active{ display:block; }
