@@ -117,7 +117,7 @@ app.get('/', function(req, res){
 	
   console.log("app.get / " + req + ' ' + req.session);
 	if(!req.session.user) //Unauthenticate User
-		return res.redirect('/login');
+		return res.render("index.html");
 
   console.log("loading index");
 
