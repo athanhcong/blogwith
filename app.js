@@ -64,7 +64,9 @@ app.configure(function(){
 
   //Use static files
   app.set('views', __dirname + '/views');
-  app.engine('html', require('ejs').renderFile);
+  // app.engine('html', require('ejs').renderFile);
+  app.set('view engine', 'html');
+  app.engine('html', require('hbs').__express);
 
 
 	app.use(express.cookieParser()); 
@@ -118,7 +120,27 @@ app.get('/', function(req, res){
 		return res.redirect('/login');
 
   console.log("loading index");
-  return res.render("index.html");		
+
+  var data = {};
+  // data.evernoteUser = 
+  var userId = req.session.user.id;
+  flow.exec(
+    function() {
+      redisClient.get('users:'+ userId +':evernote:user', this.MULTI('evernoteUser'));
+      // redisClient.get('users:'+ userId +':github:user', this.MULTI('githubUser'));
+      redisClient.get('users:' + userId + ':github:pageData', this.MULTI('githubUser'));
+
+    },function(results) {
+      console.log(results);
+      var indexPageData = {};
+      indexPageData.evernoteUser = JSON.parse(results.evernoteUser[1]);
+      indexPageData.githubUser = JSON.parse(results.githubUser[1]);
+      // indexPageData.githubPageData = JSON.parse(results.githubPageData[1]);
+      // indexPageData.evernoteUser = {username : "hello"};
+      return res.render("index.html", indexPageData);    
+    }
+  );
+  
 	// return res.redirect('/index');
 });
 
@@ -142,6 +164,7 @@ EvernoteLib.authenticationCallback = function(req, res, data, token) {
   var userId = req.session.user.id;
   redisClient.sadd('users:' + userId, userId);
   redisClient.set('users:' + userId + ':evernote:user', JSON.stringify(req.session.user));
+
 }
 
 GithubLib.authenticationCallback = function(req, res, err, token) {
