@@ -19,6 +19,7 @@
     , "fs-extra": "~0.6.0"
     , "jsdom": "~0.6.0"
     , "hbs": "latest"
+    , "mongojs" : "latest"
   },
   "engines": {
     "node": "0.8.14"

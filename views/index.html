@@ -66,7 +66,7 @@
     <!-- EVERNOTE -->
       <div class="connectItem">
         <br />
-        <p>Step 1: <a class='btn-success' href="/evernote/authentication">
+        <p>Step 1: <a class='btn-success' id="evernoteAuthentication" href="/evernote/authentication">
           {{#if evernoteUser}}
             Connected with Evernote
           {{else}}
@@ -149,9 +149,8 @@ git push origin gh-pages</code>
 
 
     <script type="text/javascript">
-      // $("#evernoteNotebook")
       var timezoneOffset = - (new Date().getTimezoneOffset());
-      $("#evernoteNotebook").attr('href', $("#evernoteNotebook").attr('href') + '?timezone=' + timezoneOffset);
+      $("#evernoteAuthentication").attr('href', $("#evernoteAuthentication").attr('href') + '?timezone=' + timezoneOffset);
     </script>
   </body>
 </html>

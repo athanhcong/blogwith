@@ -21,7 +21,6 @@ $(function() {
 
     // if (!isOn) {
     // };
-    
   }
   
   window.onhashchange = reloadtabs;
