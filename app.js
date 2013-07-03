@@ -94,7 +94,7 @@ app.configure(function(){
           console.log('requesting note found' + req.session.evernoteUserId);
           req.session.evernoteUserId = null;
         } else {
-          // console.log('requesting ' + user.evernoteUserId);
+          console.log('requesting ' + req.session.evernoteUserId);
           req.user = user;
         }      
         next();
@@ -162,16 +162,21 @@ EvernoteLib.authenticationCallback = function(req, res, evernoteUser, token) {
   var userId = evernoteUser.id;
 
   console.log('user timezone '+ req.session.userTimezoneOffset);
+  var user = {
+    evernote : {
+      user: evernoteUser
+      , oauthAccessToken: token
+    }
+    , 'timezoneOffset': req.session.userTimezoneOffset
+  };
 
-  db.users.update({evernoteUserId: userId}, {$set: {
-    'evernote.user': evernoteUser
-    , 'evernote.oauthAccessToken': token
-    , 'timezoneOffset': req.session.userTimezoneOffset}}, {upsert: true}, function(err, updated) {
+  db.users.update({evernoteUserId: userId}, {$set: user}, {upsert: true}, function(err, updated) {
 
       if( err || !updated ) console.log("User not updated" + err);
       else console.log("User updated");
 
-      updateUserNotebook(req, res);
+      req.user = user;
+      upsertUserNotebook(req, res);
   });
 }
 
@@ -259,29 +264,20 @@ GithubLib.authenticationCallback = function(req, res, err, token) {
 
 
 
-var updateUserNotebook = function(req, res) {
+var upsertUserNotebook = function(req, res) {
 
 
-
-  // redisClient.set('users:' + req.session.evernoteUserId + ':evernote:user', JSON.stringify(req.session.user));
-
-  // console.log('users:' + req.session.evernoteUserId + ':evernote:user');
-
-  // var result = redisClient.get('users:' + req.session.evernoteUserId + ':evernote:user', function(err, data){
-  //   console.log('redis get: ' + data);
-  // });
-
-  if(!req.session.user) return res.send('Unauthenticate',401);
+  if(!req.session.evernoteUserId) return res.send('Unauthenticate',401);
 
 
-  var userInfo = req.session.user;
+  var userInfo = req.user;
   var userId = req.session.evernoteUserId;
 
   console.log("/evernote/create-notebook: " + userId);
 
   // Create notebook
   var notebookName = "Blog with Evernote";
-  var noteStore = EvernoteLib.Client(req.session.oauthAccessToken).getNoteStore();
+  var noteStore = EvernoteLib.Client(req.user.evernote.oauthAccessToken).getNoteStore();
 
   var createNotebook = function() {
 
@@ -297,19 +293,20 @@ var updateUserNotebook = function(req, res) {
       , publishing : notebookPublishing
     });
 
-    var noteStore1 = EvernoteLib.Client(req.session.oauthAccessToken).getNoteStore();
-    noteStore1.createNotebook(req.session.oauthAccessToken, notebook, 
+    var noteStore1 = EvernoteLib.Client(req.user.evernote.oauthAccessToken).getNoteStore();
+    noteStore1.createNotebook(req.user.evernote.oauthAccessToken, notebook, 
       function onsuccess(data) {
         console.log("Created Notebook: Guid " + data.guid);
-
-        redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
         
-        return res.redirect('/');
+        db.users.update({evernoteUserId: userId}, {$set: {'evernote.notebook': data}}, {upsert: true}, function(error) {
+          if (error) console.log('ERROR: ' + error);
+          return res.redirect('/');  
+        });        
+        
       },
       function onerror(error) {
         console.log("Creating Notebook: Error " + error);
-        res.send(error,500);
-        
+        return res.send(error,500);
       });
   }
   // end createNotebook
@@ -325,25 +322,27 @@ var updateUserNotebook = function(req, res) {
     notebook.published = true;
     notebook.publishing = notebookPublishing;
 
-    var noteStore1 = EvernoteLib.Client(req.session.oauthAccessToken).getNoteStore();
-    noteStore1.updateNotebook(req.session.oauthAccessToken, notebook, 
+    var noteStore1 = EvernoteLib.Client(req.user.evernote.oauthAccessToken).getNoteStore();
+    noteStore1.updateNotebook(req.user.evernote.oauthAccessToken, notebook, 
       function onsuccess(data) {
         console.log("Updated Notebook: Guid " + data.guid);
-        redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
+
+        db.users.update({evernoteUserId: userId}, {$set: {'evernote.notebook': data}}, {upsert: true}, function(error) {
+          if (error) console.log('ERROR: ' + error);
+          return res.redirect('/');  
+        });
         
-        return res.redirect('/');
       },
       function onerror(error) {
         console.log("Update Notebook: Error " + error);
-        res.send(error,500);
-        
+        return res.send(error,500);
       });
   }
   // end createNotebook
 
   var createNotebookIfNeeded = function() {
     // Check for note books
-    noteStore.listNotebooks(req.session.oauthAccessToken, function(data) {
+    noteStore.listNotebooks(req.user.evernote.oauthAccessToken, function(data) {
       console.log("Retrieved notebooks: " + data.length +  JSON.stringify(data));
 
       var foundNotebook;
@@ -363,65 +362,62 @@ var updateUserNotebook = function(req, res) {
       };
 
       if (foundNotebook) {
-        console.log("Found notebook");
-        redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(foundNotebook));
-        return res.redirect('/');
+        console.log("Found notebook" + foundNotebook.guid);
+
+        db.users.update({evernoteUserId: userId}, {$set: {'evernote.notebook': foundNotebook}}, {upsert: true}, function(error) {
+          if (error) console.log('ERROR: ' + error);
+          return res.redirect('/');  
+        });
 
       } else {
         console.log("No notebook. Creating one");
-        createNotebook();
+        return createNotebook();
       };
     },
     function onerror(error) {
       console.log(error);
-      res.send(error,500);
+      return res.send(error,500);
       
     }); // list notebooks
   }
 
-  var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, notebookData){
-    if (notebookData) {
-      var notebook = JSON.parse(notebookData);
-      console.log("Notebook: " + JSON.stringify(notebook));
-      console.log(req.session.oauthAccessToken);
-      //NoteStoreClient.prototype.getNotebook = function(authenticationToken, guid, callback) {
-      noteStore.getNotebook(req.session.oauthAccessToken, notebook.guid, 
-        function(serverNotebook) {
-          console.log("Get Notebook: " + JSON.stringify(serverNotebook));
-          // update notebook info
-          if (serverNotebook.published) {
-            redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
-            return res.redirect('/');
-          } else {
-            //NoteStoreClient.prototype.updateNotebook = function(authenticationToken, notebook, callback) {
-            console.log("Updating notebook");
-            updateNotebook(serverNotebook);
-          };
-          
-        },
-        function onerror(error) {
-          console.log("Get Notebook: Error " + error); 
-          // if (error instanceof Evernote.EDAMNotFoundException) {
-            // console.log("Not found Notebook");
 
-            createNotebookIfNeeded();
-          // } else {
-            
-            // res.send(error,500);  
-          // }
-        }
-      );
+  // Check if I have notebook or not
 
-      // return res.redirect('/');
-    } else {
+  if (req.user.evernote && req.user.evernote.notebook) {
+    var notebook = req.user.evernote.notebook;
+    console.log("Notebook: " + JSON.stringify(notebook));
 
-      createNotebookIfNeeded(); 
-    }
+    //NoteStoreClient.prototype.getNotebook = function(authenticationToken, guid, callback) {
+    noteStore.getNotebook(req.user.evernote.oauthAccessToken, notebook.guid, 
+      function(updatedNotebook) {
+        console.log("Get Notebook: " + JSON.stringify(updatedNotebook));
+        // update notebook info
+        if (updatedNotebook.published) {
 
-  });
-}
+          db.users.update({evernoteUserId: userId}, {$set: {'evernote.notebook': updatedNotebook}}, {upsert: true}, function(error) {
+            if (error) console.log('ERROR: ' + error);
+            return res.redirect('/');  
+          });
 
-app.get('/evernote/create-notebook', updateUserNotebook);
+        } else {
+          //NoteStoreClient.prototype.updateNotebook = function(authenticationToken, notebook, callback) {
+          console.log("Updating notebook");
+          return updateNotebook(updatedNotebook);
+        };
+        
+      },
+      function onerror(error) {
+        console.log("Get Notebook: Error " + error); 
+        return createNotebookIfNeeded();
+      }
+    );
+  } else {
+    return createNotebookIfNeeded(); 
+  }
+};
+
+app.get('/evernote/create-notebook', upsertUserNotebook);
 
 
 // app.get('/evernote/sync', function(req, res){
@@ -486,9 +482,7 @@ app.get('/evernote/sync', function(req, res){
     
     console.log('notebookGuid ' + notebookGuid);
     
-
-
-    EvernoteLib.findNotesMetadata(req.session.oauthAccessToken, {notebookGuid : notebookGuid}, function(error, noteList) {
+    EvernoteLib.findNotesMetadata(req.user.evernote.oauthAccessToken, {notebookGuid : notebookGuid}, function(error, noteList) {
       if (error) {
         console.log(error);
         res.send(error,500);
