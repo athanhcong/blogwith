@@ -555,7 +555,7 @@ app.get('/evernote/sync', function(req, res){
 
 var checkUpdateForPost = function(user, note, callback) {
 
-  db.posts.findOne({evernoteNoteGuid: note.guid}, function(error, post) {
+  db.posts.findOne({evernoteGuid: note.guid}, function(error, post) {
 
 
     if (!post) {
@@ -774,8 +774,12 @@ var uploadResourceIfNeeded = function(user, note, evenoteResource, callback) {
 
         if (!error && githubResource) {
           var resource = {
-            'github.file': githubResource
-            , 'evernote.resource' : evenoteResource
+            'github': {
+              'file': githubResource
+            }
+            , 'evernote' : {
+              'resource' :evenoteResource
+            }
             , 'evernoteGuid' : evenoteResource.guid
           };
 
