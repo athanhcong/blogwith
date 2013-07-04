@@ -91,7 +91,7 @@
         </a>
         {{#if user.evernote.user}}
           &nbsp;<a href="#evernote"><span class="username" id="username">{{user.evernote.user.username}}</span>
-          <sub>&nbsp;⇣&nbsp;</sub></a>
+          <span style="font-size:80%;">▾</span></a>
         {{/if}}
       </p>
     </div>
@@ -121,7 +121,7 @@
         </a>
         {{#if user.github.user}}
           &nbsp;<a href="#github"><span>{{user.github.user.login}}</span>
-          <sub>&nbsp;⇣&nbsp;</sub>
+          <span style="font-size:80%;">▾</span>
           </a>
         {{/if}}
       </p>
@@ -168,7 +168,7 @@ git push origin gh-pages</code>
         <p>Step 3: <a class='btn-success'>Happy Blogging</a>
           {{#if posts.count}}&nbsp;<a href="#posts">
             <span>{{posts.count}} posts and going strong</span>
-            <sub>&nbsp;⇣&nbsp;</sub></a>
+            <span style="font-size:80%;">▾</span></a>
           {{else}}
             {{#if user.github.user}}
               <span>Start by writing your first <a target="_blank" href="https://www.evernote.com/Home.action#b={{user.evernote.notebook.guid}}">note</a>.</span>
