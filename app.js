@@ -990,11 +990,14 @@ app.get('/evernote/webhook', function(req, res){
     
     console.log("user info: " + JSON.stringify(user));
 
-    if !(user && user.evernote && user.evernote.notebook) {
+    if (!(user && user.evernote && user.evernote.notebook)) {
       console.log('Can not find notebook');
       res.end('');      
+      return;
     };
 
+    var notebook = user.evernote.notebook;
+    
     if (reason == 'create') {
       createPostWithMetadata(user, noteGuid, notebook.guid, function(error, data){
         if (error) {
