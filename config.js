@@ -7,7 +7,7 @@ config = {};
       config.serverUrl = process.env.URL;
       config['githubClientId'] = '1144e0f6ba3889d04621';
       config['githubClientSecret'] = '910f3c346e97c8bdfccbb9001d7b010f1ce6a0e3';
-      config.mongoConnectionString = 'mongodb://localhost';
+      config.mongoConnectionString = 'mongodb://heroku:1b619f94ee94e192ccc45bafb8553631@dharma.mongohq.com:10097/app16258179';
   } else {
       config['serverPort'] = '8082';
       config['serverUrl'] = 'http://localhost:' + config.serverPort;
