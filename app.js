@@ -53,7 +53,7 @@ var RedisStore = require('connect-redis')(express)
 
 ///////// DATABASE WITH MONGO
 var mongojs = require('mongojs');
-var collections = ["users", "posts"]
+var collections = ["users", "posts", "resources"];
 var db = mongojs(config.mongoConnectionString, collections);
 
 
@@ -89,12 +89,13 @@ app.configure(function(){
     res.locals.session = req.session;
 
     if (req.session.evernoteUserId && !req.user) {
-      db.users.findOne({evernoteUserId: req.session.evernoteUserId}, function(error, user) {
+      db.users.findOne({evernoteId: req.session.evernoteUserId}, function(error, user) {
         if (error) {
           console.log('requesting note found' + req.session.evernoteUserId);
           req.session.evernoteUserId = null;
         } else {
-          console.log('requesting ' + req.session.evernoteUserId);
+          // console.log('requesting ' + req.session.evernoteUserId);
+          // console.log('requesting ' + JSON.stringify(user));
           req.user = user;
         }      
         next();
@@ -170,7 +171,7 @@ EvernoteLib.authenticationCallback = function(req, res, evernoteUser, token) {
     , 'timezoneOffset': req.session.userTimezoneOffset
   };
 
-  db.users.update({evernoteUserId: userId}, {$set: user}, {upsert: true}, function(err, updated) {
+  db.users.update({evernoteId: userId}, {$set: user}, {upsert: true}, function(err, updated) {
 
       if( err || !updated ) console.log("User not updated" + err);
       else console.log("User updated");
@@ -186,7 +187,7 @@ GithubLib.authenticationCallback = function(req, res, err, token) {
   var userId = req.session.evernoteUserId;
 
 
-  db.users.update({evernoteUserId: userId}, {$set: {'github.oauthAccessToken': token}}, {upsert: true}, function(error) {
+  db.users.update({evernoteId: userId}, {$set: {'github.oauthAccessToken': token}}, {upsert: true}, function(error) {
     if (error) console.log('ERROR: ' + error);
   });
 
@@ -201,7 +202,7 @@ GithubLib.authenticationCallback = function(req, res, err, token) {
     if (data) {
       // data.authToken = token;
 
-      db.users.update({evernoteUserId: userId}, {$set: {'github.user': data}}, {upsert: true}, function(error) {
+      db.users.update({evernoteId: userId}, {$set: {'github.user': data}}, {upsert: true}, function(error) {
         if (error) console.log('ERROR: ' + error);
       });
 
@@ -235,7 +236,7 @@ GithubLib.authenticationCallback = function(req, res, err, token) {
                 , 'repoName' : foundRepo.name
             };
 
-            db.users.update({evernoteUserId: userId}, {$set: {'github.repository': foundRepo, 'github.apiData': apiData}}, {upsert: true}, function(error) {
+            db.users.update({evernoteId: userId}, {$set: {'github.repository': foundRepo, 'github.apiData': apiData}}, {upsert: true}, function(error) {
               if (error) console.log('ERROR: ' + error);
             });
 
@@ -270,7 +271,7 @@ var upsertUserNotebook = function(req, res) {
   if(!req.session.evernoteUserId) return res.send('Unauthenticate',401);
 
 
-  var userInfo = req.user;
+  var user = req.user;
   var userId = req.session.evernoteUserId;
 
   console.log("/evernote/create-notebook: " + userId);
@@ -298,7 +299,7 @@ var upsertUserNotebook = function(req, res) {
       function onsuccess(data) {
         console.log("Created Notebook: Guid " + data.guid);
         
-        db.users.update({evernoteUserId: userId}, {$set: {'evernote.notebook': data}}, {upsert: true}, function(error) {
+        db.users.update({evernoteId: userId}, {$set: {'evernote.notebook': data}}, {upsert: true}, function(error) {
           if (error) console.log('ERROR: ' + error);
           return res.redirect('/');  
         });        
@@ -327,7 +328,7 @@ var upsertUserNotebook = function(req, res) {
       function onsuccess(data) {
         console.log("Updated Notebook: Guid " + data.guid);
 
-        db.users.update({evernoteUserId: userId}, {$set: {'evernote.notebook': data}}, {upsert: true}, function(error) {
+        db.users.update({evernoteId: userId}, {$set: {'evernote.notebook': data}}, {upsert: true}, function(error) {
           if (error) console.log('ERROR: ' + error);
           return res.redirect('/');  
         });
@@ -364,7 +365,7 @@ var upsertUserNotebook = function(req, res) {
       if (foundNotebook) {
         console.log("Found notebook" + foundNotebook.guid);
 
-        db.users.update({evernoteUserId: userId}, {$set: {'evernote.notebook': foundNotebook}}, {upsert: true}, function(error) {
+        db.users.update({evernoteId: userId}, {$set: {'evernote.notebook': foundNotebook}}, {upsert: true}, function(error) {
           if (error) console.log('ERROR: ' + error);
           return res.redirect('/');  
         });
@@ -395,7 +396,7 @@ var upsertUserNotebook = function(req, res) {
         // update notebook info
         if (updatedNotebook.published) {
 
-          db.users.update({evernoteUserId: userId}, {$set: {'evernote.notebook': updatedNotebook}}, {upsert: true}, function(error) {
+          db.users.update({evernoteId: userId}, {$set: {'evernote.notebook': updatedNotebook}}, {upsert: true}, function(error) {
             if (error) console.log('ERROR: ' + error);
             return res.redirect('/');  
           });
@@ -420,43 +421,26 @@ var upsertUserNotebook = function(req, res) {
 app.get('/evernote/create-notebook', upsertUserNotebook);
 
 
-// app.get('/evernote/sync', function(req, res){
-//   console.log("/evernote/create-notebook");
 
-//   if(!req.session.user) return res.send('Unauthenticate',401);
-//   if(!req.body) return res.send('Invalid content',400);
 
-//   // Check notebook
-//   var userId = req.session.evernoteUserId;
-//   var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, data){
-//     if(!data) return res.send('Can not find notebook',400);
 
-//     // Get all notes
-//     var notebook = JSON.parse(data);
-  
-//     console.log("Retrieve change from notebook " + notebook.name);
-    
-//     // evernote.createNotebook(userInfo, notebook, function(err, data) {
-//     //   console.log("Creating " + err + ' ' + JSON.stringify(data));
-//     //   if (err) {
-//     //     if(err == 'EDAMUserException') return res.send(err,403);
-//     //     return res.send(err,500);
-//     //   } else {
-//     //     redisClient.set('users:' + userId + ':evernote:notebook', JSON.stringify(data));
-//     //   }
-//     // });
-//     return res.redirect('/');
 
-//   });
 
-//   console.log("Retrieve notebook " + JSON.stringify(result));
-// });
+
+
+
+
+////////////////////////////////////
+//////////// SYNC ////////////
+////////////////////////////////////
+
 
 app.get('/evernote/sync', function(req, res){
   console.log('/evernote/sync');
-  if(!req.session.user) return res.send('Unauthenticate',401);
 
-  var userInfo  = req.session.user;
+  if(!req.session.evernoteUserId) return res.send('Unauthenticate',401);
+  if(!req.user.evernote) return res.send('Not connected with Evernote',401);
+
   var offset    = req.query.offset || 0;
   var count     = req.query.count || 50;
   var words     = req.query.words || '';
@@ -466,68 +450,65 @@ app.get('/evernote/sync', function(req, res){
 
   var userId = req.session.evernoteUserId;
 
+  var notebook = req.user.evernote.notebook;
 
 
-  var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, data) {
+  if (!notebook) {
+    return res.send('No notebook',500);
+  }
 
-    if (!data) {
-      return res.send('No notebook',500);
-    }
+  var notebookGuid = notebook.guid;
+  
+  console.log('notebookGuid ' + notebookGuid);
+  
+  EvernoteLib.findNotesMetadata(req.user.evernote.oauthAccessToken, {notebookGuid : notebookGuid}, function(error, noteList) {
+    if (error) {
+      console.log(error);
+      res.send(error,500);
+    } else {
+      
 
-    var notebook = JSON.parse(data);
+      // filter based on notebook
+      var allNotes = noteList.notes;
 
-    console.log('notebook ' + JSON.stringify(notebook));
+      console.log(" Got Notes List: " + allNotes.length);
+      var filteredNotes = [];
 
-    var notebookGuid = notebook.guid;
-    
-    console.log('notebookGuid ' + notebookGuid);
-    
-    EvernoteLib.findNotesMetadata(req.user.evernote.oauthAccessToken, {notebookGuid : notebookGuid}, function(error, noteList) {
-      if (error) {
-        console.log(error);
-        res.send(error,500);
-      } else {
-        
-
-        // filter based on notebook
-        var allNotes = noteList.notes;
-
-        console.log(" Got Notes List: " + allNotes.length);
-        var filteredNotes = [];
-
-        for (var i = allNotes.length - 1; i >= 0; i--) {
-          var note = allNotes[i];
-          if (note.notebookGuid == notebookGuid) {
-            filteredNotes.push(note);
-          } else {
-            console.log("WARNING: Found note not belong to this notebook");
-          };
+      for (var i = allNotes.length - 1; i >= 0; i--) {
+        var note = allNotes[i];
+        if (note.notebookGuid == notebookGuid) {
+          filteredNotes.push(note);
+        } else {
+          console.log("WARNING: Found note not belong to this notebook");
         };
+      };
 
-        noteList.notes = filteredNotes;
+      noteList.notes = filteredNotes;
 
-        syncNotesMetadata(req, res, noteList, function(err, data){
-          return res.send(noteList,200);
-        });
-      }
-    });
-
+      syncNotesMetadata(req, res, noteList, function(err, data){
+        return res.send(noteList,200);
+      });
+    }
   });
 
 
   var syncNotesMetadata = function(req, res, notesMetadata, cb) {
     console.log('syncNotesMetadata');
 
+    if(!req.session.evernoteUserId) return res.send('Unauthenticate',401);
+    if(!req.user.evernote) return res.send('Not connected with Evernote',401);
+
     // Get old notesMetadata
     var userId = req.session.evernoteUserId;
 
-    var result = redisClient.get('users:' + userId + ':evernote:notesMetadata', function(err, oldNMData) {
+    var oldNM = req.user.evernote.notesMetadata;
 
-    if (!oldNMData) {
+
+    if (!oldNM) {
       // No notesMetadata before
+      // TODO: wrong with req
       initBlogWithNotesMetadata(req, res, notesMetadata);
     } else {
-      oldNM = JSON.parse(oldNMData);
 
       var oldUpdateCount = oldNM.updateCount;
       var newUpdateCount = notesMetadata.updateCount;
@@ -535,42 +516,33 @@ app.get('/evernote/sync', function(req, res){
 
       // if (oldUpdateCount != newUpdateCount)  
       {
-        // Generate old note hashtable
+        // Generate old note hashtable, for quick search
         // var oldNotes = oldNM.notes;
         // var oldNotesTable = {};
         // for (var i = 0; i < oldNotes.length; i++) {
         //   var note = oldNotes[i];
         //   oldNotesTable[note.guid] = note.updated;
-
         // };
+
 
         var newNotes = notesMetadata.notes;
 
-        var result = redisClient.get('users:' + userId + ':evernote:user', function(err, data) {
-          var userInfo = JSON.parse(data);
-          // checkUpdateForPost(userInfo, newNotes[0], this);
-          // var note = newNotes[0];
-          // console.log(note.guid);
-          // updatePostWithMetadata(userInfo, note.guid, null, function(error, data) {
+        flow.serialForEach(newNotes, function(note) {
+          checkUpdateForPost(req.user, note, this);
+        },function() {
+          // callback for previous function
 
-          // });
-          // return;
-          
-          flow.serialForEach(newNotes, function(note) {
-            checkUpdateForPost(userInfo, note, this);
-          },function() {
-            // console.log("DONE: syncNotesMetadata");
-          });
-
+        },function() {
+          // save note metadata here
+          console.log("DONE: syncNotesMetadata");
         });
       };
     }
 
-
-    redisClient.set('users:' + userId + ':evernote:notesMetadata', JSON.stringify(notesMetadata));
-
-    cb(null); // Callback
-  });
+    db.users.update({evernoteId: userId}, {$set: {'evernote.notesMetadata': notesMetadata}}, {upsert: true}, function(error) {
+      if (error) console.log('ERROR: ' + error);
+      cb(null); // Callback
+    });
 
   };
 
@@ -581,20 +553,19 @@ app.get('/evernote/sync', function(req, res){
 
 //////////////
 
-var checkUpdateForPost = function(userInfo, note, callback) {
-  var userId = userInfo.id;
-  var result = redisClient.get('users:' + userId + ':posts:' + note.guid + ':updated', function(err, updated) {
+var checkUpdateForPost = function(user, note, callback) {
 
-    console.log('Get `updated` for note ' + note.guid + ': ' + updated);
+  db.posts.findOne({evernoteNoteGuid: note.guid}, function(error, post) {
 
-    if (!updated) {
+
+    if (!post) {
       console.log('New post: ' + note.title);
 
-      createPostWithMetadata(userInfo, note.guid, null, callback);
-    } else if (note.updated != updated) {
+      createPostWithMetadata(user, note.guid, null, callback);
+    } else if (note.updated != post.evernoteUpdated) {
       // update note
-      console.log('Update post: ' + note.title);
-      updatePostWithMetadata(userInfo, note.guid, null, callback);
+      console.log('Get `updated` for note ' + note.title + ': ' + post.evernoteUpdated);
+      updatePostWithMetadata(user, note.guid, null, callback);
     } else {
       console.log('Old post: ' + note.title);
       callback(null);
@@ -603,11 +574,11 @@ var checkUpdateForPost = function(userInfo, note, callback) {
 }
 
 
-var createPostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGuid, callback) {
-  var noteStore = EvernoteLib.Client(userInfo.oauthAccessToken).getNoteStore();
+var createPostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, callback) {
+  var noteStore = EvernoteLib.Client(user.evernote.oauthAccessToken).getNoteStore();
   console.log("createPostWithMetadata" + noteGuid);
   //getNote = function(authenticationToken, guid, withContent, withResourcesData, withResourcesRecognition, withResourcesAlternateData, callback) {
-  noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
+  noteStore.getNote(user.evernote.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
     console.log('Get note for creating: - Note: ' + note.title);
     // console.log('Get note for creating: - Note: ' + JSON.stringify(note));
 
@@ -617,10 +588,10 @@ var createPostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGu
       return;
     };
 
-    note.timezoneOffset = userInfo.timezoneOffset;
-    note.timezone = userInfo.timezone;
+    // note.timezoneOffset = user.timezoneOffset;
+    // note.timezone = user.timezone;
 
-    createGithubPost(userInfo, note, function(error, data) {
+    createGithubPost(user, note, function(error, data) {
       callback(error, data);
     });
 
@@ -628,18 +599,18 @@ var createPostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGu
 
   }, function onerror(error) {
     // console.log("createPostWithMetadata" + error);
-    // callback(error);
+    callback(error);
   });
 }
 
-var updatePostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGuid, callback) {
+var updatePostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, callback) {
   console.log('updatePostWithMetadata ' + noteGuid);
 
-  // console.log(userInfo);
+  // console.log(user);
 
-  var noteStore = EvernoteLib.Client(userInfo.oauthAccessToken).getNoteStore();
+  var noteStore = EvernoteLib.Client(user.evernote.oauthAccessToken).getNoteStore();
 
-  noteStore.getNote(userInfo.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
+  noteStore.getNote(user.evernote.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
     
     // console.log('Get note for updating: Note: ' + JSON.stringify(note));
 
@@ -652,33 +623,32 @@ var updatePostWithMetadata = function(userInfo, noteGuid, validateWithNotebookGu
     };
     
     // redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
-    var userId = userInfo.id;
-    var result = redisClient.get('users:' + userId + ':posts:' + note.guid + ':githubData', function(err, data) {
-      // console.log('Database: ' + 'users:' + userId + ':posts:' + guid + ':githubData' + ': '+ data);  
-      if (err) {
-        callback(err);
-        return;
-      };
+    var userId = user.id;
 
-      if (data) {
+    db.posts.findOne({evernoteGuid: note.guid}, function(error, note) {
+      if(error) {
+        return callback(error);
+      }
+
+
+      if (note) {
         // console.log(data);
-        var githubCommit = JSON.parse(data);
 
         var sha;
-        if (githubCommit.content) {
-          sha = githubCommit.content.sha;
+        if (note.github.file) {
+          sha = note.github.file.sha;
         };
         
         console.log('Updating github file with SHA: ' + sha);  
-        updateGithubPost(userInfo, sha , note, function(err, data) {
+        updateGithubPost(user, sha , note, function(err, data) {
           console.log(err);
           callback(err, data);
         });          
       } else {
         console.log('Can not find github sha. Create instead');
-        note.timezoneOffset = userInfo.timezoneOffset;
-        note.timezone = userInfo.timezone;
-        createGithubPost(userInfo, note, function(err, data) {
+        // note.timezoneOffset = user.timezoneOffset;
+        // note.timezone = user.timezone;
+        createGithubPost(user, note, function(err, data) {
           callback(err, data);
         });
       };
@@ -694,26 +664,26 @@ var initBlogWithNotesMetadata = function(req, res, notesMetadata) {
 
   var userId = req.session.evernoteUserId;
 
-  var result = redisClient.get('users:' + userId + ':evernote:user', function(err, data) {
-    var userInfo = JSON.parse(data);
-
-    var newNotes = notesMetadata.notes;
-    flow.serialForEach(newNotes, function(note) {
-      checkUpdateForPost(userInfo, note, this);
-    },function() {
-      // console.log("DONE: syncNotesMetadata");
-    });
+  var newNotes = notesMetadata.notes;
+  flow.serialForEach(newNotes, function(note) {
+    checkUpdateForPost(req.user, note, this);
+  },function() {
+    // console.log("DONE: syncNotesMetadata");
+  }, function() {
+    console.log("DONE: initBlogWithNotesMetadata");
   });
+
+
 }
 
 
-var contentInMarkdown = function(userInfo, note, callback) {
-  uploadResources(userInfo, note, function(error, resources) {
+var contentInMarkdown = function(user, note, callback) {
+  uploadResources(user, note, function(error, resources) {
 
 
     if (!error && resources) {
       // process the resource
-      var noteContent = EvernoteLib.contentInMarkdown(userInfo, note, resources);
+      var noteContent = EvernoteLib.contentInMarkdown(user, note, resources);
       // console.log("contentInMarkdown" + noteContent);
       callback(null, noteContent);
     } else {
@@ -723,55 +693,19 @@ var contentInMarkdown = function(userInfo, note, callback) {
   });
 }
 
-var createGithubPost = function(userInfo, note, callback){
+var uploadAResource = function (user, note, evernoteResource, callback) {
+  var noteStore = EvernoteLib.Client(user.evernote.oauthAccessToken).getNoteStore();
 
-  var userId = userInfo.id;
-  githubRepoWithUserId(userId, function(err, repo) {
-
-    if (err) {
-      callback(err);
-      return;
-    };
-
-    console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
-
-    contentInMarkdown(userInfo, note, function (error, noteContent) {
-      if (!error && noteContent) {
-        console.log(noteContent);
-        repo.createGithubPost({note: note, content: noteContent}, function(err, data) {
-          // Save to database
-          if (err) {
-          } else if (data) {
-            var guid = note.guid;
-            redisClient.set('users:' + userId + ':posts:' + guid + ':note', JSON.stringify(note));
-            redisClient.set('users:' + userId + ':posts:' + guid + ':updated', note.updated);
-            redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
-          };
-
-          callback(err, data);
-        });
-      };
-    })
-
-
-  });
-};
-
-
-var uploadAResource = function (userInfo, note, resource, callback) {
-  var noteStore = EvernoteLib.Client(userInfo.oauthAccessToken).getNoteStore();
-
-  noteStore.getResourceData(userInfo.oauthAccessToken, resource.guid, 
+  noteStore.getResourceData(user.evernote.oauthAccessToken, evernoteResource.guid, 
     function onsuccess(fileData) {
 
-      console.log("Got resource: " + fileData);
-      console.log("Got resource: " + JSON.stringify(fileData));
+      console.log("Got resource: " + fileData + " Length: " + fileData.byteLength);
 
       // Send to github
       var fileDataBase64 = new Buffer(fileData).toString('base64');
       // console.log(fileDataBase64);
 
-      githubRepoWithUserId(userInfo.id, function(err, repo) {
+      githubRepoWithUser(user, function(err, repo) {
         if (err) {
           console.log("Get Resouce error : " + err);
 
@@ -783,23 +717,24 @@ var uploadAResource = function (userInfo, note, resource, callback) {
 
         console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
 
-        // var noteContent = EvernoteLib.contentInMarkdown(userInfo, note);
+        // var noteContent = EvernoteLib.contentInMarkdown(user, note);
         var path = "images/" + note.guid + "/" 
         // + new Date().getTime() + "/" 
-        + resource.attributes.fileName;
+        + evernoteResource.attributes.fileName;
 
 
         console.log('createFile: ' + path);
 
-        repo.createFile(path, fileDataBase64, function(error, data) {
+        repo.createFileOrRetrieve(path, fileDataBase64, function(error, data) {
 
-          console.log("uploaded file error:" + error);          
-          console.log("uploaded file" + JSON.stringify(data));
+          
 
           if (error) {
+            console.log("uploaded file error:" + error);          
+
             callback(error);
           } else {
-
+            console.log("uploaded file: " + data.name);
             callback(null, data);
 
           };
@@ -818,54 +753,46 @@ var uploadAResource = function (userInfo, note, resource, callback) {
     });
 }
 
-var uploadResourceIfNeeded = function(userInfo, note, resource, callback, next) {
+var uploadResourceIfNeeded = function(user, note, evenoteResource, callback) {
     // Check for cached resource info
 
-  var resourceUrlKey = 'users:' + userInfo.id + ':posts:' + note.guid + ':resources:' + resource.guid + ':githubContent';
-
-  console.log("uploadResourceIfNeeded " + resourceUrlKey);
-
-  console.log("key: " + resourceUrlKey);
-  redisClient.get(resourceUrlKey, function(error, data) {
-
-    if (!error && data) {
-      var githubResource = JSON.parse(data);
-      console.log("Found resource: " + githubResource.content.path);
-      callback(null, githubResource);
-      next();
+  db.resources.findOne({evernoteGuid: evenoteResource.guid}, function(error, resource) {
+    if( !error && resource) {
+      console.log("Found resource: " + resource.github);
+      callback(null, resource);
       return;
+    } else {
+
+      // Not found, then:
+      // Get resource data
+      // NoteStoreClient.prototype.getResourceData = function(authenticationToken, guid, callback)
+
+      console.log("Not Found resource: " + user.evernote.oauthAccessToken + " xx " + evenoteResource.guid);
+
+      uploadAResource(user, note, evenoteResource, function(error, githubResource) {
+        console.log(" ");
+
+        if (!error && githubResource) {
+          var resource = {
+            'github.file': githubResource
+            , 'evernote.resource' : evenoteResource
+            , 'evernoteGuid' : evenoteResource.guid
+          };
+
+          db.resources.update({evernoteGuid: evenoteResource.guid}, {$set: resource}, {upsert: true}, function(error) {
+            if (error) console.log('ERROR: ' + error);
+            callback(error, resource);
+          });
+        } else {
+          callback(error, null);
+        };
+
+      });
     }
-
-    // Not found, then:
-    // Get resource data
-    // NoteStoreClient.prototype.getResourceData = function(authenticationToken, guid, callback)
-
-    console.log("Not Found resource: " + userInfo.oauthAccessToken + " xx " + resource.guid);
-
-    uploadAResource(userInfo, note, resource, function(error, data) {
-      console.log("uploadAResource");
-
-      if (!error && data) {
-        redisClient.set(resourceUrlKey, JSON.stringify(data));
-      };
-
-      callback(error, data);
-      next();
-
-
-    });
-
-    // Resource name for resource
-    // send resource to github
-
-    // save resource info
-
-
-    
   });
 }
 
-var uploadResources = function(userInfo, note, callback) {
+var uploadResources = function(user, note, callback) {
 
   var resources = note.resources
 
@@ -875,39 +802,48 @@ var uploadResources = function(userInfo, note, callback) {
   
 
   // resource = resources[0];
-  // uploadResourceIfNeeded(userInfo, note, resource, function() {});
+  // uploadResourceIfNeeded(user, note, resource, function() {});
 
   var uploadedResources = [];
   flow.serialForEach(resources, 
-    function(resource) {
-      uploadResourceIfNeeded(userInfo, note, resource, function(error, data) {
-        
-        if (!error && data && data.content && data.content.path) {
-          // console.log(data);
-          var githubUrl = "/" + data.content.path;
-          uploadedResources[resource.guid] = githubUrl;  
+    function(evernoteResource) {
+      uploadResourceIfNeeded(user, note, evernoteResource, this);
+    }
+    , function(error, resource) {
+
+        if (!error && resource && resource.github && resource.github.file.path) {
+          console.log("Finish uploadResourceIfNeeded: " + resource.github.file.path);  
+
+          var githubUrl = "/" + resource.github.file.path;
+          uploadedResources[resource.evernoteGuid] = githubUrl;  
+        } else {
+          console.log("Finish uploadResourceIfNeeded: ERROR: " + error + "DATA: " + JSON.stringify(resource));  
         };
+
+
         console.log("uploadResourceIfNeeded: ");
         console.log(uploadedResources);
-      }, this);
     }
-    , function (error) {
-      console.log("this is weird");
-    }
+
     , function () {
       console.log("Finished uploadResources flow: ");
       console.log(uploadedResources);
       callback(null, uploadedResources);
     }
   );
-
 }
 
-// Update a file in github
-var updateGithubPost = function(userInfo, githubSha, note, callback){
 
-  var userId = userInfo.id;
-  githubRepoWithUserId(userId, function(err, repo) {
+var createGithubPost = function(user, note, callback){
+
+  if (!user.github) {
+    console.log("WARNING: Not connected with Github");
+    return;
+  }
+
+  var userId = user.evernoteId;
+  githubRepoWithUser(user, function(err, repo) {
+
     if (err) {
       callback(err);
       return;
@@ -915,20 +851,81 @@ var updateGithubPost = function(userInfo, githubSha, note, callback){
 
     console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
 
-    contentInMarkdown(userInfo, note, function (error, noteContent) {
+    contentInMarkdown(user, note, function (error, noteContent) {
       if (!error && noteContent) {
+        console.log(noteContent);
+        repo.createGithubPost({note: note, content: noteContent}, function(err, githubPost) {
 
-        repo.updateGithubPost(githubSha, {note: note, content: noteContent} , function(err, data) {
           // Save to database
           if (err) {
             console.log(err);
-          } else if (data) {
-            var guid = note.guid;
-            redisClient.set('users:' + userId + ':posts:' + guid + ':note', JSON.stringify(note));
-            redisClient.set('users:' + userId + ':posts:' + guid + ':updated', note.updated);
-            redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
+            callback(err); 
+
+          } else if (githubPost) {
+            var post = {
+              'evernoteGuid' : note.guid
+              , 'evernote.note' : note
+              , 'github.file' : githubPost 
+              , 'evernoteUpdated' : note.updated
+              , 'updated' : new Date()
+            };
+
+            db.posts.update({evernoteGuid: note.guid}, {$set: post}, {upsert: true}, function(error) {
+              if (error) console.log('ERROR: ' + error);
+              callback (error, post);
+            });
           };
-          callback(err, data); 
+
+
+        });
+      };
+    })
+
+
+  });
+};
+
+
+// Update a file in github
+var updateGithubPost = function(user, githubSha, note, callback){
+
+  if (!user.github) {
+    console.log("WARNING: Not connected with Github");
+    return;
+  }
+
+  githubRepoWithUser(user, function(err, repo) {
+    if (err) {
+      callback(err);
+      return;
+    };
+
+    console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
+
+    contentInMarkdown(user, note, function (error, noteContent) {
+      if (!error && noteContent) {
+
+        repo.updateGithubPost(githubSha, {note: note, content: noteContent} , function(err, githubPost) {
+          // Save to database
+          if (err) {
+            console.log(err);
+            callback(err); 
+
+          } else if (githubPost) {
+            var post = {
+              'evernoteGuid' : note.guid
+              , 'evernote.note' : note
+              , 'github.file' : githubPost 
+              , 'evernoteUpdated' : note.updated
+              , 'updated' : new Date()
+            };
+
+            db.posts.update({evernoteGuid: note.guid}, {$set: post}, {upsert: true}, function(error) {
+              if (error) console.log('ERROR: ' + error);
+              callback (error, post);
+            });
+          };
+
         });
       }
     });
@@ -936,25 +933,17 @@ var updateGithubPost = function(userInfo, githubSha, note, callback){
 
 };
 
-var githubRepoWithUserId = function(userId, callback) {
-  var result = redisClient.get('users:' + userId + ':github:pageData', function(err, data) {
+var githubRepoWithUser = function(user, callback) {
+  var githubPageData = user.github.apiData;
+  var githubUsername = githubPageData.login;
 
-    if (err) {
-      return callback(err);
-    };
+  githubRepoName = githubUsername + '/' + githubPageData.repoName;
 
-    var githubPageData = JSON.parse(data);
-    var githubUsername = githubPageData.login;
+  var _ghClient = GithubLib.apiClient();
+  _ghClient.token = githubPageData.authToken;
+  var _ghRepo = _ghClient.repo(githubRepoName);
 
-    githubRepoName = githubUsername + '/' + githubPageData.repoName;
-
-    var _ghClient = GithubLib.apiClient();
-    _ghClient.token = githubPageData.authToken;
-    var _ghRepo = _ghClient.repo(githubRepoName);
-
-    callback(null, _ghRepo);
-
-  });
+  callback(null, _ghRepo);
 };
 
 
@@ -992,8 +981,8 @@ app.get('/evernote/webhook', function(req, res){
       res.end('');
       return;
     }
-    var userInfo = JSON.parse(userData);
-    console.log("user info: " + JSON.stringify(userInfo));
+    var user = JSON.parse(userData);
+    console.log("user info: " + JSON.stringify(user));
 
     var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, notebookData) {
 
@@ -1005,15 +994,15 @@ app.get('/evernote/webhook', function(req, res){
 
       var notebook = JSON.parse(notebookData);
 
-      if (userInfo) {
+      if (user) {
         if (reason == 'create') {
-          createPostWithMetadata(userInfo, noteGuid, notebook.guid, function(error, data){
+          createPostWithMetadata(user, noteGuid, notebook.guid, function(error, data){
             if (error) {
               console.log(error);
             };
           });
         } else if (reason == 'update') {
-          updatePostWithMetadata(userInfo, noteGuid, notebook.guid, function(error, data){
+          updatePostWithMetadata(user, noteGuid, notebook.guid, function(error, data){
             if (error) {
               console.log(error);
             };
@@ -1036,7 +1025,7 @@ app.get('/me', function(req, res){
   if(!req.session.user)
     return res.send('Please, provide valid authToken',401);
 
-  db.users.findOne({evernoteUserId: req.session.evernoteUserId}, function(error, user) {
+  db.users.findOne({evernoteId: req.session.evernoteUserId}, function(error, user) {
     if (error) {
       return res.send(error,500); 
     } else {

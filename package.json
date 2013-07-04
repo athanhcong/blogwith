@@ -20,6 +20,9 @@
     , "jsdom": "~0.6.0"
     , "hbs": "latest"
     , "mongojs" : "latest"
+
+    , "request": "2.9.x"
+    , "randomstring": "1.x.x"
   },
   "engines": {
     "node": "0.8.14"
