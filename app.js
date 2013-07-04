@@ -610,14 +610,14 @@ var updatePostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, 
 
   var noteStore = EvernoteLib.Client(user.evernote.oauthAccessToken).getNoteStore();
 
-  noteStore.getNote(user.evernote.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
+  noteStore.getNote(user.evernote.oauthAccessToken, noteGuid, true, false, false, false, function(evernoteNote) {
     
     // console.log('Get note for updating: Note: ' + JSON.stringify(note));
 
-    console.log('Get note for updating: Note: ' + note.title);
+    console.log('Get note for updating: Note: ' + evernoteNote.title);
 
-    if (validateWithNotebookGuid && note.notebookGuid != validateWithNotebookGuid) {
-      console.log("Validate notebook failed! " + note.notebookGuid + " vs " + validateWithNotebookGuid);
+    if (validateWithNotebookGuid && evernoteNote.notebookGuid != validateWithNotebookGuid) {
+      console.log("Validate notebook failed! " + evernoteNote.notebookGuid + " vs " + validateWithNotebookGuid);
       callback("Validate notebook failed!");
       return;
     };
@@ -625,22 +625,22 @@ var updatePostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, 
     // redisClient.set('users:' + userId + ':posts:' + guid + ':githubData', JSON.stringify(data));
     var userId = user.id;
 
-    db.posts.findOne({evernoteGuid: note.guid}, function(error, note) {
+    db.posts.findOne({evernoteGuid: evernoteNote.guid}, function(error, post) {
       if(error) {
         return callback(error);
       }
 
 
-      if (note) {
+      if (post) {
         // console.log(data);
 
         var sha;
-        if (note.github.file) {
-          sha = note.github.file.sha;
+        if (post.github.file) {
+          sha = post.github.file.sha;
         };
         
         console.log('Updating github file with SHA: ' + sha);  
-        updateGithubPost(user, sha , note, function(err, data) {
+        updateGithubPost(user, sha ,evernoteNote , function(err, data) {
           console.log(err);
           callback(err, data);
         });          
@@ -648,7 +648,7 @@ var updatePostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, 
         console.log('Can not find github sha. Create instead');
         // note.timezoneOffset = user.timezoneOffset;
         // note.timezone = user.timezone;
-        createGithubPost(user, note, function(err, data) {
+        createGithubPost(user, evernoteNote, function(err, data) {
           callback(err, data);
         });
       };
@@ -677,13 +677,13 @@ var initBlogWithNotesMetadata = function(req, res, notesMetadata) {
 }
 
 
-var contentInMarkdown = function(user, note, callback) {
-  uploadResources(user, note, function(error, resources) {
+var contentInMarkdown = function(user, evernoteNote, callback) {
+  uploadResources(user, evernoteNote, function(error, resources) {
 
 
     if (!error && resources) {
       // process the resource
-      var noteContent = EvernoteLib.contentInMarkdown(user, note, resources);
+      var noteContent = EvernoteLib.contentInMarkdown(user, evernoteNote, resources);
       // console.log("contentInMarkdown" + noteContent);
       callback(null, noteContent);
     } else {
@@ -798,10 +798,12 @@ var uploadResourceIfNeeded = function(user, note, evenoteResource, callback) {
 
 var uploadResources = function(user, note, callback) {
 
-  var resources = note.resources
+  var evernoteResources = note.resources;
 
-  if (resources) {
-    console.log("uploadResources: " + resources.length);  
+  if (evernoteResources) {
+    console.log("uploadResources: " + evernoteResources.length);  
+  } else {
+    return callback(null, []);
   };
   
 
@@ -809,7 +811,7 @@ var uploadResources = function(user, note, callback) {
   // uploadResourceIfNeeded(user, note, resource, function() {});
 
   var uploadedResources = [];
-  flow.serialForEach(resources, 
+  flow.serialForEach(evernoteResources, 
     function(evernoteResource) {
       uploadResourceIfNeeded(user, note, evernoteResource, this);
     }
