@@ -169,14 +169,10 @@ app.get('/', function(req, res){
         return res.render("index.html", indexPageData);
       });
 
-
-
+    } else {
+      return res.render("index.html", indexPageData);
     };
-
-    // indexPageData.serverUrl = config.serverUrl;
-    
   });
-
 
 });
 
