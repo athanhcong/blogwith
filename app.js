@@ -746,10 +746,12 @@ var uploadAResource = function (user, note, evernoteResource, callback) {
 
         console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
 
+
+        var resourceFilename = evernoteResource.attributes.fileName.toLowerCase().split(' ').join('-');
         // var noteContent = EvernoteLib.contentInMarkdown(user, note);
         var path = "images/" + note.guid + "/" 
         // + new Date().getTime() + "/" 
-        + evernoteResource.attributes.fileName;
+        + resourceFilename;
 
 
         console.log('createFile: ' + path);
