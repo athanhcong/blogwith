@@ -971,57 +971,47 @@ app.get('/evernote/webhook', function(req, res){
   var url_parts = url.parse(req.url, true);
   var query = url_parts.query;
   
-  var userId = query.userId;
+  var evernoteUserId = query.userId;
   var noteGuid = query.guid;
   var reason = query.reason;
 
-  console.log('/evernote/webhook ' + userId + ' ' + noteGuid + ' ' + reason);
+  console.log('/evernote/webhook ' + evernoteUserId + ' ' + noteGuid + ' ' + reason);
 
   //redisClient.set('users:' + userId + ':evernote:user', JSON.stringify(req.session.user));
 
 
-  var result = redisClient.get('users:' + userId + ':evernote:user', function(err, userData) {
-
-    if (err) {
+  db.users.findOne({evernoteId: req.session.evernoteUserId}, function(error, user) {
+    if (error) {
       console.log('Can not find user ' + userId);
       res.end('');
       return;
     }
-    var user = JSON.parse(userData);
+
+    
     console.log("user info: " + JSON.stringify(user));
 
-    var result = redisClient.get('users:' + userId + ':evernote:notebook', function(err, notebookData) {
+    if !(user && user.evernote && user.evernote.notebook) {
+      console.log('Can not find notebook');
+      res.end('');      
+    };
 
-      if (err) {
-        console.log('Can not find notebook for ' + userId);
-        res.end('');
-        return;
-      }
+    if (reason == 'create') {
+      createPostWithMetadata(user, noteGuid, notebook.guid, function(error, data){
+        if (error) {
+          console.log(error);
+        };
+      });
+    } else if (reason == 'update') {
+      updatePostWithMetadata(user, noteGuid, notebook.guid, function(error, data){
+        if (error) {
+          console.log(error);
+        };
+      });
+    }
 
-      var notebook = JSON.parse(notebookData);
-
-      if (user) {
-        if (reason == 'create') {
-          createPostWithMetadata(user, noteGuid, notebook.guid, function(error, data){
-            if (error) {
-              console.log(error);
-            };
-          });
-        } else if (reason == 'update') {
-          updatePostWithMetadata(user, noteGuid, notebook.guid, function(error, data){
-            if (error) {
-              console.log(error);
-            };
-          });
-        }
-
-        res.end('', 200);      
-      };
-
-    });
+    res.end('', 200);      
 
   });
-
 });
 
 
