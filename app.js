@@ -140,6 +140,7 @@ app.get('/', function(req, res){
   
   if (req.user.github && req.user.github.user) {
     indexPageData.githubUser = req.user.github.user;
+    indexPageData.githubRepository = req.user.github.repository;
   };  
   
   return res.render("index.html", indexPageData);    
@@ -980,7 +981,7 @@ app.get('/evernote/webhook', function(req, res){
   //redisClient.set('users:' + userId + ':evernote:user', JSON.stringify(req.session.user));
 
 
-  db.users.findOne({evernoteId: req.session.evernoteUserId}, function(error, user) {
+  db.users.findOne({evernoteId: evernoteUserId}, function(error, user) {
     if (error) {
       console.log('Can not find user ' + userId);
       res.end('');
@@ -997,7 +998,7 @@ app.get('/evernote/webhook', function(req, res){
     };
 
     var notebook = user.evernote.notebook;
-    
+
     if (reason == 'create') {
       createPostWithMetadata(user, noteGuid, notebook.guid, function(error, data){
         if (error) {
