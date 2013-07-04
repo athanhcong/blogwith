@@ -972,16 +972,12 @@ app.get('/evernote/webhook', function(req, res){
   var url_parts = url.parse(req.url, true);
   var query = url_parts.query;
   
-  var evernoteUserId = query.userId;
+  var evernoteUserId = parseInt(query.userId.trim());
   var noteGuid = query.guid;
   var reason = query.reason;
 
-  console.log('/evernote/webhook ' + evernoteUserId + ' ' + noteGuid + ' ' + reason);
 
-  //redisClient.set('users:' + userId + ':evernote:user', JSON.stringify(req.session.user));
-
-
-  db.users.findOne({evernoteId: evernoteUserId}, function(error, user) {
+  db.users.findOne({'evernoteId': evernoteUserId}, function(error, user) {
     if (error) {
       console.log('Can not find user ' + userId);
       res.end('');
@@ -989,11 +985,6 @@ app.get('/evernote/webhook', function(req, res){
     }
     
 
-
-    console.log("user info: " + JSON.stringify(user));
-    console.log(error);
-    console.log(user);
-    
     if (!(user && user.evernote && user.evernote.notebook)) {
       console.log('Can not find notebook');
       res.end('');      
