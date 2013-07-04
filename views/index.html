@@ -30,6 +30,23 @@
       }
       h3{ color: #999; font-size:32px; font-weight:normal; padding-top:20px;  }
 
+      .info {
+        font-size: 70%;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        padding-left: 30px;
+      }
+
+      .info li {
+        line-height: 30px;
+        list-style:none;
+        list-style-type:none;
+      }
+
+      code {
+        line-height: 10px;
+        color: gray;
+      }
 
       /*.login-panel>a{ display:block; font-size:22px; padding:20px 40px 20px 40px; }*/
 
@@ -50,7 +67,6 @@
         <h2><a class="logoLeft" href="/">Blog <span class="logoRight">With</span></a> <span style="font-size:80%;">helps you blog more frequently.</span></h2>
       </div>
       
-
 <!--       
  -->      
     </div>
@@ -67,25 +83,29 @@
       <div class="connectItem">
         <br />
         <p>Step 1: <a class='btn-success' id="evernoteAuthentication" href="/evernote/authentication">
-          {{#if evernoteUser}}
+          {{#if user.evernote.user}}
             Connected with Evernote
           {{else}}
             Connect with Evernote
           {{/if}}
         </a>
-        {{#if evernoteUser}}
-          &nbsp;<a href="#evernote"><span class="username" id="username">{{evernoteUser.username}}</span>
-          <small> ↓ <small></a>
+        {{#if user.evernote.user}}
+          &nbsp;<a href="#evernote"><span class="username" id="username">{{user.evernote.user.username}}</span>
+          <sub>&nbsp;⇣&nbsp;</sub></a>
         {{/if}}
       </p>
-{{#if evernoteUser}}        
     </div>
-    <div class="info evernote active">
-<!--         <a id="evernoteNotebook" href='/evernote/create-notebook'>Create a Notebook</a>
- -->      
-      <div class="account">
-        <a class="logout" href='/logout'>Logout</a>
-      </div>
+
+{{#if user.evernote.user}}        
+    <div class="info evernote">
+      <ul>
+      {{#if user.evernote.notebook}} 
+        <li>✓&nbsp;Connected with notebook <a target="_blank" href="https://www.evernote.com/Home.action#b={{user.evernote.notebook.guid}}">{{user.evernote.notebook.name}}</a>
+        </li>
+      {{/if}}
+        <li>✏&nbsp;<a class="logout" href='/logout'>Logout</a></li>
+
+      </ul>
 
     </div>
 {{/if}}
@@ -93,25 +113,34 @@
     <!-- GITHUB -->
       <div class="connectItem">
         <p>Step 2: <a class='btn-success' href="/github/authentication">
-          {{#if githubUser}}
+          {{#if user.github.user}}
             Connected with Github
           {{else}}
             Connect with Github
           {{/if}}
         </a>
-        {{#if githubUser}}
-          &nbsp;<a href="#github"><span class="username" id="username">{{githubUser.login}}</span>
-          <small> ↓ <small></a>
+        {{#if user.github.user}}
+          &nbsp;<a href="#github"><span>{{user.github.user.login}}</span>
+          <sub>&nbsp;⇣&nbsp;</sub>
+          </a>
         {{/if}}
       </p>
         
     </div>      
 
-{{#if githubUser}}
+{{#if user.github.user}}
       <div class="info github">
-        <br />
-        <p>Skip this if you already setup <a href="http://jekyllrb.com/">Jekyll</a>.</p>
-        <h4>I. Starting with Jekyll</h4>
+
+      <ul>
+      {{#if user.github.repository}} 
+        <li>✓&nbsp;Connected with repository <a target="_blank" href="https://github.com/{{user.github.repository.full_name}}">{{user.github.repository.full_name}}</a>
+        </li>
+        <li>✏&nbsp;Visit your Jekyll blog <a target="_blank" href="http://{{user.github.repository.name}}">{{user.github.repository.name}}</a>
+        </li>
+      {{/if}}
+
+        <li>✏&nbsp;Instruction to setup <a href="http://jekyllrb.com/">Jekyll</a> {{#if user.github.repository}} (You already did it!){{/if}}
+          <div style="padding-left:50px;padding-top:30px;"><h4>I. Starting with Jekyll</h4>
           <p>Copy this code and paste into your browser:</p>
 <!-- Block code -->          
 <code>gem install jekyll
@@ -120,7 +149,7 @@ cd myblog
 git init
 git add .
 git commit -m "Start with Github"
-git remote add origin https://github.com/{{githubRepository.full_name}}.git
+git remote add origin https://github.com/{{user.github.repository.full_name}}.git
 git push -u origin master</code>
 <br /><br />
             <h4>II. Deploy to Github Pages</h4>
@@ -128,15 +157,27 @@ git push -u origin master</code>
 git commit -m "Start with Github Pages"
 git push origin gh-pages</code>
 <!-- Block code --> 
-      </div>
+        </div></li>
+
+      </ul>
+
+    </div>
 {{/if}}
 
       <div class="connectItem">
-        <p>Step 3: <a class='btn-success'>Happy Blogging</a></p>
+        <p>Step 3: <a class='btn-success'>Happy Blogging</a>
+          {{#if posts.count}}&nbsp;<a href="#posts">
+            <span>{{posts.count}} posts and going strong</span>
+            <sub>&nbsp;⇣&nbsp;</sub></a>{{/if}}
+          
+        </p>
       </div>
-      <div class="info github blog">
-        <p>Now start your first note!</p>
+
+      {{#if posts.latestUpdate}}
+      <div class="info posts">
+        <ul><li>✏&nbsp;Latest update: <b>{{posts.latestUpdate.evernote.note.title}}</b> (<a target="_blank" href="{{posts.latestUpdate.github.file.html_url}}">File Link</a>)</li></ul>
       </div>
+      {{/if}}
 
     </div> 
     

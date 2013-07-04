@@ -135,15 +135,48 @@ app.get('/', function(req, res){
 
   var indexPageData = {};
   if (req.user.evernote && req.user.evernote.user) {
-    indexPageData.evernoteUser = req.user.evernote.user;  
+    indexPageData.user = {};
+    indexPageData.user.evernote = {
+      user: req.user.evernote.user
+      , notebook : req.user.evernote.notebook
+    }
   };
   
   if (req.user.github && req.user.github.user) {
-    indexPageData.githubUser = req.user.github.user;
-    indexPageData.githubRepository = req.user.github.repository;
+
+    indexPageData.user.github = {
+      user: req.user.github.user
+      , repository : req.user.github.repository
+    }
+
   };  
-  
-  return res.render("index.html", indexPageData);    
+
+
+  db.posts.find({evernoteUserId : req.session.evernoteUserId}).count(function(error, postsCount) {
+    if (postsCount > 0) {
+      indexPageData.posts = {
+        'count': postsCount
+      };
+      db.posts.find({evernoteUserId : req.session.evernoteUserId}).sort({updated: -1}).limit(1, function(error, posts) {
+        console.log(post);
+
+        if (posts.length > 0) {
+          var post = posts[0];
+          console.log('get latest updated: ' + post.evernote.note.title);
+          indexPageData.posts.latestUpdate = post;  
+        };
+        
+        return res.render("index.html", indexPageData);
+      });
+
+
+
+    };
+
+    // indexPageData.serverUrl = config.serverUrl;
+    
+  });
+
 
 });
 
@@ -870,7 +903,8 @@ var createGithubPost = function(user, note, callback){
 
           } else if (githubPost) {
             var post = {
-              'evernoteGuid' : note.guid
+              'evernoteUserId': user.evernoteId
+              , 'evernoteGuid' : note.guid
               , 'evernote.note' : note
               , 'github.file' : githubPost 
               , 'evernoteUpdated' : note.updated
@@ -920,7 +954,8 @@ var updateGithubPost = function(user, githubSha, note, callback){
 
           } else if (githubPost) {
             var post = {
-              'evernoteGuid' : note.guid
+              'evernoteUserId': user.evernoteId
+              , 'evernoteGuid' : note.guid
               , 'evernote.note' : note
               , 'github.file' : githubPost 
               , 'evernoteUpdated' : note.updated
