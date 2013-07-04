@@ -987,10 +987,13 @@ app.get('/evernote/webhook', function(req, res){
       res.end('');
       return;
     }
-
     
-    console.log("user info: " + JSON.stringify(user));
 
+
+    console.log("user info: " + JSON.stringify(user));
+    console.log(error);
+    console.log(user);
+    
     if (!(user && user.evernote && user.evernote.notebook)) {
       console.log('Can not find notebook');
       res.end('');      
