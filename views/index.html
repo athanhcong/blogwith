@@ -168,7 +168,12 @@ git push origin gh-pages</code>
         <p>Step 3: <a class='btn-success'>Happy Blogging</a>
           {{#if posts.count}}&nbsp;<a href="#posts">
             <span>{{posts.count}} posts and going strong</span>
-            <sub>&nbsp;⇣&nbsp;</sub></a>{{/if}}
+            <sub>&nbsp;⇣&nbsp;</sub></a>
+          {{else}}
+            {{#if user.github.user}}
+              <span>Start by writing your first <a target="_blank" href="https://www.evernote.com/Home.action#b={{user.evernote.notebook.guid}}">note</a>.</span>
+            {{/if}}
+          {{/if}}
           
         </p>
       </div>

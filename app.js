@@ -158,7 +158,6 @@ app.get('/', function(req, res){
         'count': postsCount
       };
       db.posts.find({evernoteUserId : req.session.evernoteUserId}).sort({updated: -1}).limit(1, function(error, posts) {
-        console.log(post);
 
         if (posts.length > 0) {
           var post = posts[0];
