@@ -31,7 +31,7 @@
       h3{ color: #999; font-size:32px; font-weight:normal; padding-top:20px;  }
 
       .info {
-        font-size: 70%;
+        font-size: 90%;
         padding-top: 20px;
         padding-bottom: 20px;
         padding-left: 30px;
@@ -48,6 +48,26 @@
         color: gray;
       }
 
+      .banner {
+        margin-top: 30px;
+        margin-left: 25px;
+        /*background-color: white;*/l
+        display: block;
+        padding-left: 75px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        
+        background-image:url('images/backpack.png');
+        background-repeat:no-repeat;
+        font-size: 20px;
+      }
+      .logo h2 {
+        font-size: 40px;
+      }
+
+      .container {
+        padding-left: 55px;
+      }
       /*.login-panel>a{ display:block; font-size:22px; padding:20px 40px 20px 40px; }*/
 
 
@@ -57,10 +77,21 @@
 
      .connectItem{margin-top:30px;}
      .connectItem .btn-success {padding: 10px 10px 10px 10px;}
+
+     .btn-success {
+      font-size: 22px;
+     }
+
+     .header {
+      padding-top: 30px;
+      padding-bottom: 20px;
+      background-color: white;
+     }
     </style>
 
   </head>
   <body>    
+    <div class = "header">
     <div class="top-container">
       
       <div class="logo">
@@ -69,20 +100,26 @@
       
 <!--       
  -->      
+      <div class="banner">
+        <p>Write down your ideas at any time, anywhere with <a target="_blank" href="http://evernote.com/">Evernote<sup style="font-size:60%;">®</sup></a>.</p>
+        <p>Publish to your favorite blogging platform, <b>automatically!</b></p>
+      </div>
+
     </div>
+
+  </div>
+
     
     <div class="container">
+
+      
     
-      <div>
-        <br /><br />
-        <p>Write down your ideas any time, anywhere with Evernote<sup style="font-size:60%;">®</sup>.</p>
-        <p>Publish to your favorite blogging platform.</p>
-      </div>
+
       
     <!-- EVERNOTE -->
       <div class="connectItem">
         <br />
-        <p>Step 1: <a class='btn-success' id="evernoteAuthentication" href="/evernote/authentication">
+        <p>Step 1:&nbsp;&nbsp;&nbsp;<a class='btn-success' id="evernoteAuthentication" href="/evernote/authentication">
           {{#if user.evernote.user}}
             Connected with Evernote
           {{else}}
@@ -112,16 +149,22 @@
 
     <!-- GITHUB -->
       <div class="connectItem">
-        <p>Step 2: <a class='btn-success' href="/github/authentication">
+        <p>Step 2:&nbsp;&nbsp;&nbsp;<a class='btn-success' href="/github/authentication">
           {{#if user.github.user}}
             Connected with Github
           {{else}}
-            Connect with Github
+            Connect with Jekyll on Github
           {{/if}}
         </a>
+        &nbsp;
         {{#if user.github.user}}
-          &nbsp;<a href="#github"><span>{{user.github.user.login}}</span>
+          <a href="#github"><span>{{user.github.user.login}}</span>
           <span style="font-size:80%;">▾</span>
+          </a>
+
+        {{else}} OR
+          &nbsp;<a class='btn-success' href="/tumblr/authentication">
+              Connect with Tumblr
           </a>
         {{/if}}
       </p>
@@ -139,25 +182,9 @@
         </li>
       {{/if}}
 
-        <li>✏&nbsp;Instruction to setup <a href="http://jekyllrb.com/">Jekyll</a> {{#if user.github.repository}} (You already did it!){{/if}}
-          <div style="padding-left:50px;padding-top:30px;"><h4>I. Starting with Jekyll</h4>
-          <p>Copy this code and paste into your browser:</p>
-<!-- Block code -->          
-<code>gem install jekyll
-jekyll new myblog
-cd myblog  
-git init
-git add .
-git commit -m "Start with Github"
-git remote add origin https://github.com/{{user.github.repository.full_name}}.git
-git push -u origin master</code>
-<br /><br />
-            <h4>II. Deploy to Github Pages</h4>
-<code>git checkout --orphan gh-pages 
-git commit -m "Start with Github Pages"
-git push origin gh-pages</code>
-<!-- Block code --> 
-        </div></li>
+        <li>✏&nbsp;Instruction to <a target="_blank" href="http://jekyllrb.com/">setup Jekyll</a> {{#if user.github.repository}} (You already did it!){{/if}}
+
+      </li>
 
       </ul>
 
@@ -165,7 +192,7 @@ git push origin gh-pages</code>
 {{/if}}
 
       <div class="connectItem">
-        <p>Step 3: <a class='btn-success'>Happy Blogging</a>
+        <p>Step 3:&nbsp;&nbsp;&nbsp;<a class='btn-success'>Happy Blogging</a>
           {{#if posts.count}}&nbsp;<a href="#posts">
             <span>{{posts.count}} posts and going strong</span>
             <span style="font-size:80%;">▾</span></a>
@@ -186,10 +213,10 @@ git push origin gh-pages</code>
 
     </div> 
     
-    <div class="bottom-container">
+    <div class="bottom-container container content">
       <br>
       <footer>
-        
+        <!-- © 2013 BlogWith. Contact: kong@blogwith.co -->
       </footer>  
     </div>
 

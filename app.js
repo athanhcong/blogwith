@@ -60,6 +60,7 @@ var db = mongojs(config.mongoConnectionString, collections);
 ///////// EVERNOTE
 var Evernote = require('evernote').Evernote;
 var EvernoteLib = require('./lib/evernote')
+  , TumblrLib = require('./lib/tumblr')
 
 var GithubLib = require('./lib/github')
   , url = require('url');
@@ -116,6 +117,7 @@ app.configure(function(){
 
   app.use(GithubLib);
   app.use(EvernoteLib);
+  app.use(TumblrLib);
 
 });
 
@@ -311,8 +313,7 @@ var upsertUserNotebook = function(req, res) {
 
   var createNotebook = function() {
 
-    var notebookPublishing = new Evernote.Publishing(
-      {
+    var notebookPublishing = new Evernote.Publishing({
         publicDescription: "Blog with Evernote"
         , uri : "blog-with-evernote"
       });
@@ -330,7 +331,7 @@ var upsertUserNotebook = function(req, res) {
         
         db.users.update({evernoteId: userId}, {$set: {'evernote.notebook': data}}, {upsert: true}, function(error) {
           if (error) console.log('ERROR: ' + error);
-          return res.redirect('/');  
+          return res.redirect('/#evernote');  
         });        
         
       },
@@ -359,7 +360,7 @@ var upsertUserNotebook = function(req, res) {
 
         db.users.update({evernoteId: userId}, {$set: {'evernote.notebook': data}}, {upsert: true}, function(error) {
           if (error) console.log('ERROR: ' + error);
-          return res.redirect('/');  
+          return res.redirect('/#evernote');  
         });
         
       },
@@ -396,7 +397,7 @@ var upsertUserNotebook = function(req, res) {
 
         db.users.update({evernoteId: userId}, {$set: {'evernote.notebook': foundNotebook}}, {upsert: true}, function(error) {
           if (error) console.log('ERROR: ' + error);
-          return res.redirect('/');  
+          return res.redirect('/#evernote');  
         });
 
       } else {
@@ -427,7 +428,7 @@ var upsertUserNotebook = function(req, res) {
 
           db.users.update({evernoteId: userId}, {$set: {'evernote.notebook': updatedNotebook}}, {upsert: true}, function(error) {
             if (error) console.log('ERROR: ' + error);
-            return res.redirect('/');  
+            return res.redirect('/#evernote');  
           });
 
         } else {

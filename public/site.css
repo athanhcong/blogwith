@@ -1,7 +1,7 @@
 @charset "utf-8";
 
 * { margin: 0; padding: 0; font-family: Palatino,Georgia, Times, Arial,Helvetica,sans-serif; color: #999; }
-body{ background-color:#F6F0e9; padding-top:20px;}
+body{ background-color:#F6F0e9;}
 h2{ color: #999; font-size:44px; font-weight:normal; padding-top:20px;  }
 a{ color: #86BC45; text-decoration:none; cursor:pointer;}
 a:active, a:hover { color: #96cC55; text-decoration:none; }
@@ -20,7 +20,7 @@ a:active, a:hover { color: #96cC55; text-decoration:none; }
   top:auto;
 }
 
-.top-container .logo { margin-top:20px; float:left; }
+/*.top-container .logo { margin-top:20px; }*/
 .top-container .account { margin-top:60px;  margin-right:210px; float:right; text-align:right;}
 .top-container .account>p{ font-size:22px; margin:0;}
 
@@ -41,7 +41,7 @@ a:active, a:hover { color: #96cC55; text-decoration:none; }
 
 .container {
   /*font-size: 15px;*/
-  font-size: 22px;
+  font-size: 18px;
   line-height: 30px;
 }
 
