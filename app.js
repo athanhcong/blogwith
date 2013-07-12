@@ -145,6 +145,8 @@ app.get('/', function(req, res){
       , notebook : req.user.evernote.notebook
     }
   };
+
+  console.log(req.user);
   
   if (req.user.github && req.user.github.user) {
 
@@ -153,7 +155,12 @@ app.get('/', function(req, res){
       , repository : req.user.github.repository
     }
 
-  };  
+  } else if (req.user.tumblr && req.user.tumblr.user) {
+    indexPageData.user.tumblr = {
+      user: req.user.tumblr.user
+      , blog : null
+    }
+  } 
 
 
   db.posts.find({evernoteUserId : req.session.evernoteUserId}).count(function(error, postsCount) {

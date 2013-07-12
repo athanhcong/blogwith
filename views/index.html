@@ -148,30 +148,20 @@
 {{/if}}
 
     <!-- GITHUB -->
-      <div class="connectItem">
+
+{{#if user.github.user}}
+      <div class="connectItem">        
         <p>Step 2:&nbsp;&nbsp;&nbsp;<a class='btn-success' href="/github/authentication">
-          {{#if user.github.user}}
             Connected with Github
-          {{else}}
-            Connect with Jekyll on Github
-          {{/if}}
         </a>
         &nbsp;
-        {{#if user.github.user}}
           <a href="#github"><span>{{user.github.user.login}}</span>
           <span style="font-size:80%;">▾</span>
           </a>
-
-        {{else}} OR
-          &nbsp;<a class='btn-success' href="/tumblr/authentication">
-              Connect with Tumblr
-          </a>
-        {{/if}}
       </p>
-        
-    </div>      
+    </div> 
 
-{{#if user.github.user}}
+
       <div class="info github">
 
       <ul>
@@ -189,7 +179,56 @@
       </ul>
       
     </div>
+{{else}}
+{{#if user.tumblr.user}}
+
+      <div class="connectItem">        
+        <p>Step 2:&nbsp;&nbsp;&nbsp;<a class='btn-success' href="/github/authentication">
+            Connected with Tumblr
+        </a>
+        &nbsp;
+          <a href="#tumblr"><span>{{user.tumblr.user.name}}</span>
+          <span style="font-size:80%;">▾</span>
+          </a>
+      </p>
+    </div>
+
+
+      <div class="info tumblr">
+
+      <ul>
+
+      {{#if user.tumblr.repository}} 
+        <li>✓&nbsp;Connected with repository <a target="_blank" href="https://github.com/{{user.github.repository.full_name}}">{{user.github.repository.full_name}}</a>
+        </li>
+        <li>✏&nbsp;Visit your Jekyll blog <a target="_blank" href="http://{{user.github.repository.name}}">{{user.github.repository.name}}</a>
+        </li>
+      {{/if}}
+        <li>✏&nbsp;<a href="/tumblr/unlink">Unlink with Tumblr</a>
+        </li>
+
+      </ul>
+      
+    </div>
+
+{{else}}    
+      <div class="connectItem">        
+        <p>Step 2:&nbsp;&nbsp;&nbsp;
+          <a class='btn-success' href="/github/authentication">
+            Connected with Github
+          </a>
+          &nbsp;OR&nbsp;
+          <a class='btn-success' href="/tumblr/authentication">
+            Connect with Tumblr
+          </a>
+        </p>
+        
+    </div>      
+
 {{/if}}
+{{/if}}
+
+
 
       <div class="connectItem">
         <p>Step 3:&nbsp;&nbsp;&nbsp;<a class='btn-success'>Happy Blogging</a>
