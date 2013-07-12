@@ -20,6 +20,7 @@ var app = express()
   , server = http.createServer(app);
 
 
+
 ///////// DATABASE WITH REDIS
 var  redis = require('redis');
 var redisClient;
@@ -57,15 +58,16 @@ var collections = ["users", "posts", "resources"];
 var db = mongojs(config.mongoConnectionString, collections);
 
 
+
 ///////// EVERNOTE
 var Evernote = require('evernote').Evernote;
 var EvernoteLib = require('./lib/evernote')
   , TumblrLib = require('./lib/tumblr')
+  , GithubLib = require('./lib/github');
+GithubLib.db = db;
+TumblrLib.db = db;
 
-var GithubLib = require('./lib/github')
-  , url = require('url');
-
-
+var url = require('url');
 var flow = require('flow');
 
 //Setup ExpressJS
@@ -735,7 +737,7 @@ var uploadAResource = function (user, note, evernoteResource, callback) {
       var fileDataBase64 = new Buffer(fileData).toString('base64');
       // console.log(fileDataBase64);
 
-      githubRepoWithUser(user, function(err, repo) {
+      GithubLib.repoWithUser(user, function(err, repo) {
         if (err) {
           console.log("Get Resouce error : " + err);
 
@@ -880,7 +882,7 @@ var createGithubPost = function(user, note, callback){
   }
 
   var userId = user.evernoteId;
-  githubRepoWithUser(user, function(err, repo) {
+  GithubLib.repoWithUser(user, function(err, repo) {
 
     if (err) {
       callback(err);
@@ -933,7 +935,7 @@ var updateGithubPost = function(user, githubSha, note, callback){
     return;
   }
 
-  githubRepoWithUser(user, function(err, repo) {
+  GithubLib.repoWithUser(user, function(err, repo) {
     if (err) {
       callback(err);
       return;
@@ -973,31 +975,9 @@ var updateGithubPost = function(user, githubSha, note, callback){
 
 };
 
-var githubRepoWithUser = function(user, callback) {
-  var githubPageData = user.github.apiData;
-  var githubUsername = githubPageData.login;
-
-  githubRepoName = githubUsername + '/' + githubPageData.repoName;
-
-  var _ghClient = GithubLib.apiClient();
-  _ghClient.token = githubPageData.authToken;
-  var _ghRepo = _ghClient.repo(githubRepoName);
-
-  callback(null, _ghRepo);
-};
-
 
 
 /////////////////////////////////////////
-
-
-app.get('/github/create', function(req, res){
-  console.log('/github/create');
-  if(!req.session.user) return res.send('Unauthenticate',401);
-
-  return res.send(data,200);
-
-});
 
 
 app.get('/evernote/webhook', function(req, res){
