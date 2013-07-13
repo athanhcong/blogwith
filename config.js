@@ -9,8 +9,9 @@ config = {};
       config['githubClientSecret'] = '910f3c346e97c8bdfccbb9001d7b010f1ce6a0e3';
       //PRO: 'mongodb://heroku:1b619f94ee94e192ccc45bafb8553631@dharma.mongohq.com:10097/app16258179';
       
-      //DEV: mongodb://heroku:6b26dcd6b4edbe356ceeaec644521974@dharma.mongohq.com:10068/app16893265
-      config.mongoConnectionString = process.env.MONGO_URL;
+      //DEV: 'mongodb://heroku:6b26dcd6b4edbe356ceeaec644521974@dharma.mongohq.com:10068/app16893265'
+      config.mongoConnectionString = process.env.MONGOHQ_URL;
+      console.log('Mongo: ' + process.env.MONGOHQ_URL);
   } else {
       config['serverPort'] = '8082';
       config['serverUrl'] = 'http://localhost:' + config.serverPort;
