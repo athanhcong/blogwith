@@ -158,8 +158,12 @@ app.get('/', function(req, res){
   } else if (req.user.tumblr && req.user.tumblr.user) {
     indexPageData.user.tumblr = {
       user: req.user.tumblr.user
-      , blog : null
+      , blog : req.user.tumblr.blog
     }
+
+    if (!req.user.tumblr.blog) {
+      indexPageData.user.tumblr.blogs = req.user.tumblr.user.blogs;
+    };
   } 
 
 

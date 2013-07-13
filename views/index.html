@@ -198,11 +198,18 @@
 
       <ul>
 
-      {{#if user.tumblr.repository}} 
-        <li>✓&nbsp;Connected with repository <a target="_blank" href="https://github.com/{{user.github.repository.full_name}}">{{user.github.repository.full_name}}</a>
+      {{#if user.tumblr.blog}} 
+        <li>✓&nbsp;Connected with blog <a target="_blank" href="{{user.tumblr.blog.url}}">{{user.tumblr.blog.url}}</a>
         </li>
-        <li>✏&nbsp;Visit your Jekyll blog <a target="_blank" href="http://{{user.github.repository.name}}">{{user.github.repository.name}}</a>
+      {{else}}
+        <li>✓&nbsp;Choose a blog you want to connect:
+          <ul>
+          {{#each user.tumblr.blogs}}
+            <li>{{this}}</li>
+          {{/each}}
+          </ul>
         </li>
+
       {{/if}}
         <li>✏&nbsp;<a href="/tumblr/unlink">Unlink with Tumblr</a>
         </li>
