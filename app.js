@@ -163,7 +163,7 @@ app.get('/', function(req, res){
 
     if (!req.user.tumblr.blog) {
       indexPageData.user.tumblr.blogs = req.user.tumblr.user.blogs;
-      
+
     };
   } 
 
@@ -491,7 +491,6 @@ app.get('/evernote/sync', function(req, res){
   var sortOrder = req.query.sortOrder || 'UPDATED';
   var ascending = req.query.ascending || false;
 
-
   var userId = req.session.evernoteUserId;
 
   var notebook = req.user.evernote.notebook;
@@ -567,9 +566,14 @@ app.get('/evernote/sync', function(req, res){
         //   var note = oldNotes[i];
         //   oldNotesTable[note.guid] = note.updated;
         // };
-
-
         var newNotes = notesMetadata.notes;
+
+
+        // test
+        createPostWithMetadata(req.user, newNotes[0].guid, null, cb);
+        return;
+        // end test
+
 
         flow.serialForEach(newNotes, function(note) {
           checkUpdateForPost(req.user, note, this);
@@ -618,6 +622,14 @@ var checkUpdateForPost = function(user, note, callback) {
 }
 
 
+var connectedBlogEngine = function (user) {
+  if (user.github) {
+    return GithubLib;
+  } else {
+    return TumblrLib;
+  }
+}
+
 var createPostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, callback) {
   var noteStore = EvernoteLib.Client(user.evernote.oauthAccessToken).getNoteStore();
   console.log("createPostWithMetadata" + noteGuid);
@@ -635,11 +647,18 @@ var createPostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, 
     // note.timezoneOffset = user.timezoneOffset;
     // note.timezone = user.timezone;
 
-    createGithubPost(user, note, function(error, data) {
-      callback(error, data);
-    });
 
+    // Choose engine and create
 
+    if (connectedBlogEngine(user) == GithubLib) {
+      createGithubPost(user, note, function(error, data) {
+        callback(error, data);
+      });
+    } else if (connectedBlogEngine(user) == TumblrLib) {
+      TumblrLib.createPostWithNote(user, note, function(error, data) {
+        callback(error, data);
+      });
+    }
 
   }, function onerror(error) {
     // console.log("createPostWithMetadata" + error);
@@ -1037,6 +1056,23 @@ app.get('/evernote/webhook', function(req, res){
   });
 });
 
+
+//test
+
+app.get('/evernote/test/create', function(req, res){
+  
+  if(!req.session.user)
+    return res.send('Please, provide valid authToken',401);
+
+  db.users.findOne({evernoteId: req.session.evernoteUserId}, function(error, user) {
+    if (error) {
+      return res.send(error,500); 
+    } else {
+      return res.send(user,200);   
+    }
+  });
+
+});
 
 
 app.get('/me', function(req, res){
