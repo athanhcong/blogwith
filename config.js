@@ -10,17 +10,14 @@ config = {};
       //PRO: 'mongodb://heroku:1b619f94ee94e192ccc45bafb8553631@dharma.mongohq.com:10097/app16258179';
       
       //DEV: 'mongodb://heroku:6b26dcd6b4edbe356ceeaec644521974@dharma.mongohq.com:10068/app16893265'
-      config.mongoConnectionString = process.env.MONGOHQ_URL;
-      console.log('Mongo: ' + process.env.MONGOHQ_URL);
   } else {
       config['serverPort'] = '8082';
       config['serverUrl'] = 'http://localhost:' + config.serverPort;
       config['githubClientId'] = 'd40e218e245efc6cedb1';
       config['githubClientSecret'] = 'a026298fd821e95083fe4a1c9e640494088e741c';
-      config.mongoConnectionString = 'mongodb://localhost';
   };
 
   config['githubRepo'] = process.env.BLOG_REPOSITORY;
-
+  config.mongoConnectionString = process.env.MONGOHQ_URL;
   return config;
 };
