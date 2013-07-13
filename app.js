@@ -547,11 +547,12 @@ app.get('/evernote/sync', function(req, res){
     var oldNM = req.user.evernote.notesMetadata;
 
 
-    if (!oldNM) {
-      // No notesMetadata before
-      // TODO: wrong with req
-      initBlogWithNotesMetadata(req, res, notesMetadata);
-    } else {
+    // if (!oldNM) {
+    //   // No notesMetadata before
+    //   // TODO: wrong with req
+    //   initBlogWithNotesMetadata(req, res, notesMetadata);
+    // } else 
+    {
 
       var oldUpdateCount = oldNM.updateCount;
       var newUpdateCount = notesMetadata.updateCount;
@@ -632,7 +633,7 @@ var connectedBlogEngine = function (user) {
 
 var createPostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, callback) {
   var noteStore = EvernoteLib.Client(user.evernote.oauthAccessToken).getNoteStore();
-  console.log("createPostWithMetadata" + noteGuid);
+  console.log("createPostWithMetadata: " + noteGuid);
   //getNote = function(authenticationToken, guid, withContent, withResourcesData, withResourcesRecognition, withResourcesAlternateData, callback) {
   noteStore.getNote(user.evernote.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
     console.log('Get note for creating: - Note: ' + note.title);
