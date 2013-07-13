@@ -163,6 +163,7 @@ app.get('/', function(req, res){
 
     if (!req.user.tumblr.blog) {
       indexPageData.user.tumblr.blogs = req.user.tumblr.user.blogs;
+      
     };
   } 
 
