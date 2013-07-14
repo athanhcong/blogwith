@@ -528,7 +528,7 @@ app.get('/evernote/sync', function(req, res){
 
       noteList.notes = filteredNotes;
 
-      syncNotesMetadata(req, res, noteList, function(err, data){
+      syncNotesMetadata(req, res, noteList, function(err, data) {
         return res.send(noteList,200);
       });
     }
@@ -554,9 +554,9 @@ app.get('/evernote/sync', function(req, res){
     // } else 
     {
 
-      var oldUpdateCount = oldNM.updateCount;
-      var newUpdateCount = notesMetadata.updateCount;
-      console.log('Compare updateCount ' + oldUpdateCount + ' vs ' + newUpdateCount);
+      // var oldUpdateCount = oldNM.updateCount;
+      // var newUpdateCount = notesMetadata.updateCount;
+      // console.log('Compare updateCount ' + oldUpdateCount + ' vs ' + newUpdateCount);
 
       // if (oldUpdateCount != newUpdateCount)  
       {
@@ -741,171 +741,6 @@ var initBlogWithNotesMetadata = function(req, res, notesMetadata) {
 }
 
 
-var contentInMarkdown = function(user, evernoteNote, callback) {
-  uploadResources(user, evernoteNote, function(error, resources) {
-
-
-    if (!error && resources) {
-      // process the resource
-      var noteContent = EvernoteLib.contentInMarkdown(user, evernoteNote, resources);
-      // console.log("contentInMarkdown" + noteContent);
-      callback(null, noteContent);
-    } else {
-      callback (error);
-    }
-
-  });
-}
-
-var uploadAResource = function (user, note, evernoteResource, callback) {
-  var noteStore = EvernoteLib.Client(user.evernote.oauthAccessToken).getNoteStore();
-
-  noteStore.getResourceData(user.evernote.oauthAccessToken, evernoteResource.guid, 
-    function onsuccess(fileData) {
-
-      console.log("Got resource: " + fileData + " Length: " + fileData.byteLength);
-
-      // Send to github
-      var fileDataBase64 = new Buffer(fileData).toString('base64');
-      // console.log(fileDataBase64);
-
-      GithubLib.repoWithUser(user, function(err, repo) {
-        if (err) {
-          console.log("Get Resouce error : " + err);
-
-          callback(err);
-          return;
-        };
-
-
-
-        console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
-
-
-        var resourceFilename = evernoteResource.attributes.fileName.toLowerCase().split(' ').join('-');
-        // var noteContent = EvernoteLib.contentInMarkdown(user, note);
-        var path = "images/" + note.guid + "/" 
-        // + new Date().getTime() + "/" 
-        + resourceFilename;
-
-
-        console.log('createFile: ' + path);
-
-        repo.createFileOrRetrieve(path, fileDataBase64, function(error, data) {
-
-          
-
-          if (error) {
-            console.log("uploaded file error:" + error);          
-
-            callback(error);
-          } else {
-            console.log("uploaded file: " + data.name);
-            callback(null, data);
-
-          };
-          // Handle Error
-          
-          
-        });
-
-      });
-
-      //contentsCreate
-    },
-    function onerror(error) {
-      console.log("Get Resouce error : " + error);
-      callback(error);
-    });
-}
-
-var uploadResourceIfNeeded = function(user, note, evenoteResource, callback) {
-    // Check for cached resource info
-
-  db.resources.findOne({evernoteGuid: evenoteResource.guid}, function(error, resource) {
-    if( !error && resource) {
-      console.log("Found resource: " + resource.github);
-      callback(null, resource);
-      return;
-    } else {
-
-      // Not found, then:
-      // Get resource data
-      // NoteStoreClient.prototype.getResourceData = function(authenticationToken, guid, callback)
-
-      console.log("Not Found resource: " + user.evernote.oauthAccessToken + " xx " + evenoteResource.guid);
-
-      uploadAResource(user, note, evenoteResource, function(error, githubResource) {
-        console.log(" ");
-
-        if (!error && githubResource) {
-          var resource = {
-            'github': {
-              'file': githubResource
-            }
-            , 'evernote' : {
-              'resource' :evenoteResource
-            }
-            , 'evernoteGuid' : evenoteResource.guid
-          };
-
-          db.resources.update({evernoteGuid: evenoteResource.guid}, {$set: resource}, {upsert: true}, function(error) {
-            if (error) console.log('ERROR: ' + error);
-            callback(error, resource);
-          });
-        } else {
-          callback(error, null);
-        };
-
-      });
-    }
-  });
-}
-
-var uploadResources = function(user, note, callback) {
-
-  var evernoteResources = note.resources;
-
-  if (evernoteResources) {
-    console.log("uploadResources: " + evernoteResources.length);  
-  } else {
-    return callback(null, []);
-  };
-  
-
-  // resource = resources[0];
-  // uploadResourceIfNeeded(user, note, resource, function() {});
-
-  var uploadedResources = [];
-  flow.serialForEach(evernoteResources, 
-    function(evernoteResource) {
-      uploadResourceIfNeeded(user, note, evernoteResource, this);
-    }
-    , function(error, resource) {
-
-        if (!error && resource && resource.github && resource.github.file.path) {
-          console.log("Finish uploadResourceIfNeeded: " + resource.github.file.path);  
-
-          var githubUrl = "/" + resource.github.file.path;
-          uploadedResources[resource.evernoteGuid] = githubUrl;  
-        } else {
-          console.log("Finish uploadResourceIfNeeded: ERROR: " + error + "DATA: " + JSON.stringify(resource));  
-        };
-
-
-        console.log("uploadResourceIfNeeded: ");
-        console.log(uploadedResources);
-    }
-
-    , function () {
-      console.log("Finished uploadResources flow: ");
-      console.log(uploadedResources);
-      callback(null, uploadedResources);
-    }
-  );
-}
-
-
 var createGithubPost = function(user, note, callback){
 
   if (!user.github) {
@@ -923,7 +758,7 @@ var createGithubPost = function(user, note, callback){
 
     console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
 
-    contentInMarkdown(user, note, function (error, noteContent) {
+    GithubLib.contentInMarkdown(user, note, function (error, noteContent) {
       if (!error && noteContent) {
         console.log(noteContent);
         repo.createGithubPost({note: note, content: noteContent}, function(err, githubPost) {
@@ -975,7 +810,7 @@ var updateGithubPost = function(user, githubSha, note, callback){
 
     console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
 
-    contentInMarkdown(user, note, function (error, noteContent) {
+    GithubLib.contentInMarkdown(user, note, function (error, noteContent) {
       if (!error && noteContent) {
 
         repo.updateGithubPost(githubSha, {note: note, content: noteContent} , function(err, githubPost) {
