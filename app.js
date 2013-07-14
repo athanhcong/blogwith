@@ -569,9 +569,11 @@ app.get('/evernote/sync', function(req, res){
         // };
         var newNotes = notesMetadata.notes;
 
-
         // test
-        createPostWithMetadata(req.user, newNotes[0].guid, null, cb);
+        // createPostWithMetadata(req.user, newNotes[0].guid, null, cb);
+        updatePostWithMetadata(req.user, newNotes[0].guid, null, cb);
+        // checkUpdateForPost(req.user, newNotes[0], cb);
+
         return;
         // end test
 
@@ -651,15 +653,10 @@ var createPostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, 
 
     // Choose engine and create
 
-    if (connectedBlogEngine(user) == GithubLib) {
-      createGithubPost(user, note, function(error, data) {
-        callback(error, data);
-      });
-    } else if (connectedBlogEngine(user) == TumblrLib) {
-      TumblrLib.createPostWithNote(user, note, function(error, data) {
-        callback(error, data);
-      });
-    }
+    var BlogEngineLib = connectedBlogEngine(user);
+    BlogEngineLib.createPostWithNote(user, note, function(error, data) {
+      callback(error, data);
+    });
 
   }, function onerror(error) {
     // console.log("createPostWithMetadata" + error);
@@ -694,27 +691,24 @@ var updatePostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, 
         return callback(error);
       }
 
+      var BlogEngineLib = connectedBlogEngine(user);
 
       if (post) {
         // console.log(data);
 
-        var sha;
-        if (post.github.file) {
-          sha = post.github.file.sha;
-        };
-        
-        console.log('Updating github file with SHA: ' + sha);
-        updateGithubPost(user, sha ,evernoteNote , function(err, data) {
-          console.log(err);
-          callback(err, data);
-        });          
-      } else {
-        console.log('Can not find github sha. Create instead');
+        BlogEngineLib.updatePostWithNote(user, post, evernoteNote, function(error, data) {
+          callback(error, data);
+        });
+         
+      } else { // for call from webhook
+        console.log('Can not find post. Create instead');
         // note.timezoneOffset = user.timezoneOffset;
         // note.timezone = user.timezone;
-        createGithubPost(user, evernoteNote, function(err, data) {
-          callback(err, data);
+
+        BlogEngineLib.createPostWithNote(user, evernoteNote, function(error, data) {
+          callback(error, data);
         });
+
       };
 
     });
@@ -741,106 +735,9 @@ var initBlogWithNotesMetadata = function(req, res, notesMetadata) {
 }
 
 
-var createGithubPost = function(user, note, callback){
-
-  if (!user.github) {
-    console.log("WARNING: Not connected with Github");
-    return;
-  }
-
-  var userId = user.evernoteId;
-  GithubLib.repoWithUser(user, function(err, repo) {
-
-    if (err) {
-      callback(err);
-      return;
-    };
-
-    console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
-
-    GithubLib.contentInMarkdown(user, note, function (error, noteContent) {
-      if (!error && noteContent) {
-        console.log(noteContent);
-        repo.createGithubPost(user, {note: note, content: noteContent}, function(err, githubPost) {
-
-          // Save to database
-          if (err) {
-            console.log(err);
-            callback(err); 
-
-          } else if (githubPost) {
-            var post = {
-              'evernoteUserId': user.evernoteId
-              , 'evernoteGuid' : note.guid
-              , 'evernote.note' : note
-              , 'github.file' : githubPost 
-              , 'evernoteUpdated' : note.updated
-              , 'updated' : new Date()
-            };
-
-            db.posts.update({evernoteGuid: note.guid}, {$set: post}, {upsert: true}, function(error) {
-              if (error) console.log('ERROR: ' + error);
-              callback (error, post);
-            });
-          };
 
 
-        });
-      };
-    })
 
-
-  });
-};
-
-
-// Update a file in github
-var updateGithubPost = function(user, githubSha, note, callback){
-
-  if (!user.github) {
-    console.log("WARNING: Not connected with Github");
-    return;
-  }
-
-  GithubLib.repoWithUser(user, function(err, repo) {
-    if (err) {
-      callback(err);
-      return;
-    };
-
-    console.log('Repo: ' + repo.name + " Token: " + repo.client.token);
-
-    GithubLib.contentInMarkdown(user, note, function (error, noteContent) {
-      if (!error && noteContent) {
-
-        repo.updateGithubPost(user, githubSha, {note: note, content: noteContent} , function(err, githubPost) {
-          // Save to database
-          if (err) {
-            console.log(err);
-            callback(err); 
-
-          } else if (githubPost) {
-            var post = {
-              'evernoteUserId': user.evernoteId
-              , 'evernoteGuid' : note.guid
-              , 'evernote.note' : note
-              , 'github.file' : githubPost 
-              , 'evernoteUpdated' : note.updated
-              , 'updated' : new Date()
-            };
-
-            db.posts.update({evernoteGuid: note.guid}, {$set: post}, {upsert: true}, function(error) {
-              if (error) console.log('ERROR: ' + error);
-              callback (error, post);
-            });
-          };
-
-        });
-      }
-    });
-  });
-
-};
 
 
 
