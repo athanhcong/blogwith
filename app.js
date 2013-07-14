@@ -703,7 +703,7 @@ var updatePostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, 
           sha = post.github.file.sha;
         };
         
-        console.log('Updating github file with SHA: ' + sha);  
+        console.log('Updating github file with SHA: ' + sha);
         updateGithubPost(user, sha ,evernoteNote , function(err, data) {
           console.log(err);
           callback(err, data);
@@ -761,7 +761,7 @@ var createGithubPost = function(user, note, callback){
     GithubLib.contentInMarkdown(user, note, function (error, noteContent) {
       if (!error && noteContent) {
         console.log(noteContent);
-        repo.createGithubPost({note: note, content: noteContent}, function(err, githubPost) {
+        repo.createGithubPost(user, {note: note, content: noteContent}, function(err, githubPost) {
 
           // Save to database
           if (err) {
@@ -813,7 +813,7 @@ var updateGithubPost = function(user, githubSha, note, callback){
     GithubLib.contentInMarkdown(user, note, function (error, noteContent) {
       if (!error && noteContent) {
 
-        repo.updateGithubPost(githubSha, {note: note, content: noteContent} , function(err, githubPost) {
+        repo.updateGithubPost(user, githubSha, {note: note, content: noteContent} , function(err, githubPost) {
           // Save to database
           if (err) {
             console.log(err);
