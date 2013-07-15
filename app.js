@@ -535,7 +535,7 @@ app.get('/evernote/sync', function(req, res){
   });
 
 
-  var syncNotesMetadata = function(req, res, notesMetadata, cb) {
+  var syncNotesMetadata = function(req, res, notesMetadata, callback) {
     console.log('syncNotesMetadata');
 
     if(!req.session.evernoteUserId) return res.send('Unauthenticate',401);
@@ -544,57 +544,28 @@ app.get('/evernote/sync', function(req, res){
     // Get old notesMetadata
     var userId = req.session.evernoteUserId;
 
-    var oldNM = req.user.evernote.notesMetadata;
+
+    var newNotes = notesMetadata.notes;
+
+    // test
+    // createPostWithMetadata(req.user, newNotes[0].guid, null, cb);
+    // updatePostWithMetadata(req.user, newNotes[0].guid, null, cb);
+    // checkUpdateForPost(req.user, newNotes[0], cb);
+
+    // return;
+    // end test
 
 
-    // if (!oldNM) {
-    //   // No notesMetadata before
-    //   // TODO: wrong with req
-    //   initBlogWithNotesMetadata(req, res, notesMetadata);
-    // } else 
-    {
-
-      // var oldUpdateCount = oldNM.updateCount;
-      // var newUpdateCount = notesMetadata.updateCount;
-      // console.log('Compare updateCount ' + oldUpdateCount + ' vs ' + newUpdateCount);
-
-      // if (oldUpdateCount != newUpdateCount)  
-      {
-        // Generate old note hashtable, for quick search
-        // var oldNotes = oldNM.notes;
-        // var oldNotesTable = {};
-        // for (var i = 0; i < oldNotes.length; i++) {
-        //   var note = oldNotes[i];
-        //   oldNotesTable[note.guid] = note.updated;
-        // };
-        var newNotes = notesMetadata.notes;
-
-        // test
-        // createPostWithMetadata(req.user, newNotes[0].guid, null, cb);
-        // updatePostWithMetadata(req.user, newNotes[0].guid, null, cb);
-        // checkUpdateForPost(req.user, newNotes[0], cb);
-
-        // return;
-        // end test
-
-
-        flow.serialForEach(newNotes, function(note) {
-          checkUpdateForPost(req.user, note, this);
-        },function() {
-          // callback for previous function
-
-        },function() {
-          // save note metadata here
-          console.log("DONE: syncNotesMetadata");
-        });
-      };
-    }
-
-    db.users.update({evernoteId: userId}, {$set: {'evernote.notesMetadata': notesMetadata}}, {upsert: true}, function(error) {
-      if (error) console.log('ERROR: ' + error);
-      cb(null); // Callback
+    flow.serialForEach(newNotes, function(note) {
+      checkUpdateForPost(req.user, note, this);
+    },function() {
+      // callback for previous function
+      
+    },function() {
+      // save note metadata here
+      console.log("DONE: syncNotesMetadata");
+      callback(null);
     });
-
   };
 
 
