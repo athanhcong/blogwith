@@ -87,10 +87,47 @@
       padding-bottom: 20px;
       background-color: white;
      }
+
+     #wrap {
+      min-height: 100%;
+      height: auto !important;
+      height: 100%;
+      margin: 0 auto -60px;
+    }
+
+
+      /* Set the fixed height of the footer here */
+      #push,
+      #footer,
+      #footer > .container {
+        height: 60px;
+      }
+      #footer {
+        background-color: #e74c3c;
+        position:fixed;
+        width:100%;
+        bottom:0px;
+      }
+
+      .container .credit {
+        margin: 20px 0;
+      }
+
+       html,
+      body {
+        height: 100%;
+        /* The html and body elements cannot have any padding or margin. */
+      }
+
+
     </style>
 
   </head>
   <body>    
+
+<div id="wrap">
+
+    
     <div class = "header">
     <div class="top-container">
       
@@ -261,13 +298,23 @@
 
     </div> 
     
+    <br /><br /><br /><br />
     <div class="bottom-container container content">
       <br>
       <footer>
         <!-- © 2013 BlogWith. Contact: kong@blogwith.co -->
       </footer>  
     </div>
-
+    
+<div id="push"></div>    
+</div>
+    <!-- Banner -->
+    <div id="footer">
+      <div class="container" style="padding-top:10px;">
+        <img alt="Medium" align="middle" src="https://s3.amazonaws.com/hackerleague/organizations/logos/5112996bdff11d65a800001e/medium.png?1362953837" width="130px" height="42px">
+        <span class="muted credit">Support BlogWith in <a target="_blank" href="https://www.hackerleague.org/hackathons/evernote-devcup-2013/hacks/blogwith">Evernote DevCup</a>.</span>
+      </div>
+    </div>
 
     <script type="text/javascript">
       var timezoneOffset = - (new Date().getTimezoneOffset());
