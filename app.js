@@ -560,7 +560,7 @@ app.get('/evernote/sync', function(req, res){
       checkUpdateForPost(req.user, note, this);
     },function() {
       // callback for previous function
-      
+
     },function() {
       // save note metadata here
       console.log("DONE: syncNotesMetadata");
@@ -599,8 +599,11 @@ var checkUpdateForPost = function(user, note, callback) {
 var connectedBlogEngine = function (user) {
   if (user.github) {
     return GithubLib;
-  } else {
+  } else if (user.tumblr) {
     return TumblrLib;
+  } else {
+    console.log("ERROR: no engine!");
+    return null;
   }
 }
 
