@@ -571,10 +571,10 @@ app.get('/evernote/sync', function(req, res){
 
         // test
         // createPostWithMetadata(req.user, newNotes[0].guid, null, cb);
-        updatePostWithMetadata(req.user, newNotes[0].guid, null, cb);
+        // updatePostWithMetadata(req.user, newNotes[0].guid, null, cb);
         // checkUpdateForPost(req.user, newNotes[0], cb);
 
-        return;
+        // return;
         // end test
 
 
