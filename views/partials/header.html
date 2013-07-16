@@ -158,17 +158,33 @@
       .header .top-container .tutorialAction .tutorialDetail {
         font-size:16px;
       }
+
+      .fb-like {
+        height: 30px;
+        /*padding-left: 150px;*/
+      }
     </style>
 
   </head>
   <body>    
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=537611466305875";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
 
 <div class="wrap wrapBanner">
 
   <div class="wrap wrapFooterLink">
     
     <div class = "header" style="background-color:white;">
-    <div class="top-container">
+     <div class="top-container">
       
       <div class="logo">
         <h2><a class="logoLeft" href="/">Blog <span class="logoRight">With</span></a> <span style="font-size:80%;">connects Evernote with your blog.</span></h2>
@@ -183,6 +199,6 @@
 
 
 
-    </div>
+      </div>
 
-  </div>
+    </div>

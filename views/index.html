@@ -5,7 +5,13 @@
 </style>
 
 {{> header}}
-    
+<div class="header" style="background-color:white; padding-top: 0px;padding-bottom:0px; padding-left:150px; margin-top:-20px; height:30px;">
+      <div class="container">
+
+      <div class="fb-like" data-href="http://blogwith.co" data-send="true" data-width="450" data-show-faces="true" data-font="arial"></div>
+    </div>
+</div>
+
     <div class="container">
     <!-- EVERNOTE -->
       <div class="connectItem">
@@ -146,7 +152,14 @@
 
       {{#if posts.latestUpdate}}
       <div class="info posts">
-        <ul><li>✏&nbsp;Latest update: <b>{{posts.latestUpdate.evernote.note.title}}</b> (<a target="_blank" href="{{posts.latestUpdate.github.file.html_url}}">File Link</a>)</li></ul>
+        <ul><li>✏&nbsp;Latest update: <b>{{posts.latestUpdate.evernote.note.title}}</b> 
+
+{{#if posts.latestUpdate.github}}
+          (<a target="_blank" href="{{posts.latestUpdate.github.file.html_url}}">Github Link</a>)
+{{/if}}         
+
+
+        </li></ul>
       </div>
       {{/if}}
 
