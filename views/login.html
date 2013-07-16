@@ -1,58 +1,48 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <link href="./lib/bootstrap/css/bootstrap.css" rel="stylesheet">
-    <link href="./site.css" rel="stylesheet">
-    
-    <script src="./lib/jquery/jquery-1.7.1.min.js"></script>
-    <script src="./lib/bootstrap/js/bootstrap.js"></script>
+  <style> 
+    .container {
+      padding-left: 35px;
+    } 
+  </style>
 
-    <script>
-      
-    </script>
-    
-  </head>
-  <body>    
-    <div class="top-container">
-      <div class="logo">
-        <h2>Blog with Evernote<sup style="font-size:60%;">®</sup></h2>
-<!--         <p>On <a href="https://github.com/">GitHub <sup style="font-size:60%;">®</sup></a></p>-->
+
+{{> header}}
+
+
+
+   <div class="header" style="background-color:#F6F0e9;">
+      <div class="top-container">
+
+        <table width="100%">
+          <tr>
+            <td class="tutorialImage"><img src="/images/home_tutorial_write.png"></td>
+            <td class="tutorialImage"><img src="/images/home_tutorial_sync.png"></td>
+            <td class="tutorialImage"><img src="/images/home_tutorial_done.png"></td>
+          </tr>
+          <tr>
+            <td class="tutorialAction">Write<br/><span class="tutorialDetail">in Evernote for Mac, PC, iOS or Android</span></td>
+            <td class="tutorialAction">Sync<br/><span class="tutorialDetail">&nbsp;</span> </td>
+            <td class="tutorialAction">Posted<br/><span class="tutorialDetail">in Jekyll, Tumblr or Wordpress</span></td>
+          </tr>
+        </table>
       </div>
-    
-    <div class="container">
-        
-      <div class="description">
-          <p>What if blogging is as easy as taking note?</p>
-      </div>      
-      <div class='login-panel'>
-
-
-        <a class='login btn-success' href="/evernote/authentication">
-          Login with Evernote
-        </a>
-        <br />
-<p>to syncs your notes with the geeky and minimalist blogging platform <a href="http://jekyllrb.com/"  target="_blank">Jekyll</a> and <a href="http://pages.github.com/"  target="_blank">Github® Pages.</a></p>
-      
-      </div>
-        
-
-      
-    </div> 
-    
-    <div class="bottom-container">
-      <footer>
-        <div>
-        <ul>
-          <li>EVERNOTE, the Evernote Elephant logo are trademarks of Evernote Corporation and used under a license.</li>
-          <li>GITHUB®, the GITHUB® logo design are exclusive trademarks registered in the United States by GitHub, Inc.</li>
-
-        </ul>
-        </div>
-      </footer>  
     </div>
     
+    <div class="container">
+      <br/><span style="font-size:16px;">Get started</span>&nbsp;
+    <!-- EVERNOTE -->
+      <span class="connectItem">
+        <a class='btn-success' id="evernoteAuthentication" href="/evernote/authentication">
+          {{#if user.evernote.user}}
+            Connected with Evernote
+          {{else}}
+            Connect with Evernote
+          {{/if}}
+        </a>
+        {{#if user.evernote.user}}
+          &nbsp;<a href="/#evernote"><span class="username" id="username">{{user.evernote.user.username}}</span>
+          <span style="font-size:80%;">▾</span></a>
+        {{/if}}
+    </span>
+  </div>
     
-      
-  </body>
-</html>
+{{> footer}}

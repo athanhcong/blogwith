@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Blog with Evernote</title>
+    <link href="./lib/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="./site.css" rel="stylesheet">
+    
+    <script src="./lib/jquery/jquery-1.7.1.min.js"></script>
+    <script src="./lib/bootstrap/js/bootstrap.js"></script>
+    
+    
+    <script src="./lib/enml-js/lib/xml-writer.js"></script>
+    <script src="./lib/enml-js/lib/xml-parser.js"></script>
+    <script src="./lib/enml-js/enml.js"></script> 
+
+    <script src="./site.js"></script>
+
+    <style>
+      .logoRight {
+        background-color: #96cC55;
+        padding: 10px 10px 5px 10px;
+        color: white;
+        border-radius:5px;
+      }
+
+      .logoLeft {
+        background-color: white;
+        padding: 10px 0px 5px 10px; 
+        border-radius:5px;
+      }
+      h3{ color: #999; font-size:32px; font-weight:normal; padding-top:20px;  }
+
+      .info {
+        font-size: 90%;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        padding-left: 30px;
+      }
+
+      .info li {
+        line-height: 30px;
+        list-style:none;
+        list-style-type:none;
+      }
+
+      code {
+        line-height: 10px;
+        color: gray;
+      }
+
+      .banner {
+        margin-top: 30px;
+        margin-left: 25px;
+        /*background-color: white;*/l
+        display: block;
+        padding-left: 75px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        
+        background-image:url('images/backpack.png');
+        background-repeat:no-repeat;
+        font-size: 20px;
+      }
+      .logo h2 {
+        font-size: 40px;
+      }
+
+      .container {
+        padding-left: 55px;
+      }
+      /*.login-panel>a{ display:block; font-size:22px; padding:20px 40px 20px 40px; }*/
+
+
+/*      .login-panel{ margin-top:30px; margin-bottom:60px; min-height:50px;}
+*/ 
+     .login-panel>a{ margin:10px 30px 20px 100px; font-size:22px; padding:20px 40px 20px 40px; }
+
+     .connectItem{margin-top:30px;}
+     .connectItem .btn-success {padding: 10px 10px 10px 10px;}
+
+     .btn-success {
+      font-size: 22px;
+     }
+
+     .header {
+      padding-top: 30px;
+      padding-bottom: 20px;
+     }
+
+     #wrap {
+      min-height: 100%;
+      height: auto !important;
+      height: 100%;
+      margin: 0 auto -60px;
+    }
+
+
+      /* Set the fixed height of the footer here */
+      #push,
+      #footer,
+      #footer > .container {
+        height: 48px;
+      }
+      #footer {
+        background-color: #e74c3c;
+        position:fixed;
+        width:100%;
+        bottom:0px;
+      }
+
+      .container .credit {
+        margin: 20px 0;
+        color: white;
+        font-family: Arial, Helvetica, sans-serif;
+        font-weight: lighter;
+        font-size: 15px;
+      }
+
+       html,
+      body {
+        height: 100%;
+        /* The html and body elements cannot have any padding or margin. */
+      }
+
+
+      .sub-banner {
+        height: 300px;
+        background-color: black;
+      }
+
+      .header .top-container td {
+        width: 33%;
+        text-align: center;
+        line-height: 110%;
+        padding-top: 10px;
+      }
+      .header .top-container .tutorialAction {
+        height: 60px;
+        color: #666;
+        font-size: 24px;
+      }
+      .header .top-container img {
+        height: 154px;
+      }      
+      .header .top-container .tutorialAction .tutorialDetail {
+        font-size:14px;
+      }
+    </style>
+
+  </head>
+  <body>    
+
+<div id="wrap">
+
+    
+    <div class = "header" style="background-color:white;">
+    <div class="top-container">
+      
+      <div class="logo">
+        <h2><a class="logoLeft" href="/">Blog <span class="logoRight">With</span></a> <span style="font-size:80%;">connects Evernote with your blog.</span></h2>
+      </div>
+      
+<!--       
+ -->      
+      <div class="banner">
+        <p>Write down your ideas at any time, anywhere with <a target="_blank" href="http://evernote.com/">Evernote<sup style="font-size:60%;">®</sup></a>.</p>
+        <p><b>Automatically</b> publish new post to  <a target="_blank" href="http://jekyllrb.com/">Jekyll<sup style="font-size:60%;">®</sup></a>, <a target="_blank" href="http://evernote.com/">Tumblr<sup style="font-size:60%;">®</sup></a> and (coming soon to <a target="_blank" href="https://wordpress.com/">Wordpress<sup style="font-size:60%;">®</sup></a>).</p>
+      </div>
+
+
+
+    </div>
+
+  </div>

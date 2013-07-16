@@ -70,6 +70,11 @@ TumblrLib.db = db;
 var url = require('url');
 var flow = require('flow');
 
+
+
+var hbs = require('hbs');
+hbs.registerPartials(__dirname + '/views/partials');
+
 //Setup ExpressJS
 app.configure(function(){
 
@@ -77,7 +82,7 @@ app.configure(function(){
   app.set('views', __dirname + '/views');
   // app.engine('html', require('ejs').renderFile);
   app.set('view engine', 'html');
-  app.engine('html', require('hbs').__express);
+  app.engine('html', hbs.__express);
 
 	app.use(express.cookieParser()); 
 	app.use(express.bodyParser());
@@ -134,8 +139,7 @@ app.get('/', function(req, res){
   console.log("app.get / " + req.session.evernoteUserId);
 
 	if(!req.user) //Unauthenticate User
-		return res.render("index.html");
-
+		return res.redirect("/home");
 
   var indexPageData = {};
   if (req.user.evernote && req.user.evernote.user) {
@@ -191,6 +195,14 @@ app.get('/', function(req, res){
 
 });
 
+// Welcom Page
+app.get('/home', function(req, res){
+  
+  console.log("app.get /home");
+
+  return res.render("login.html");
+
+});
 
 //===================================================
 //                Authentications
