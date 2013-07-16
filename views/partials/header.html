@@ -49,7 +49,7 @@
         color: gray;
       }
 
-      .banner {
+      .heading {
         margin-top: 30px;
         margin-left: 25px;
         /*background-color: white;*/l
@@ -97,25 +97,33 @@
 
 
       /* Set the fixed height of the footer here */
-      #push,
-      #footer-banner,
-      #footer-banner > .container {
+      .push,
+      .banner,
+      .banner > .container {
+        background-color: #bdc3c7;
+
         height: 48px;
       }
-      #footer-banner {
-        /*background-color: #e74c3c;*/
-        background-color: #bdc3c7;
+
+      .banner {
         position:fixed;
+     }
+      .footer {
+        /*background-color: #e74c3c;*/
+        
         width:100%;
         bottom:0px;
-        font-size: 16px;
       }
 
       .container .credit {
         margin: 20px 0;
         color: white;
-        font-size: 16px;
       }
+
+      .webFooter {
+/*        font-size: 14px;
+*/      }
+
 
        html,
       body {
@@ -153,6 +161,7 @@
 
 <div id="wrap">
 
+  <div id="wrap">
     
     <div class = "header" style="background-color:white;">
     <div class="top-container">
@@ -163,7 +172,7 @@
       
 <!--       
  -->      
-      <div class="banner">
+      <div class="heading">
         <p>Write down your ideas at any time, anywhere with <a target="_blank" href="http://evernote.com/">Evernote<sup style="font-size:60%;">®</sup></a>.</p>
         <p><b>Automatically</b> publish new post to  <a target="_blank" href="http://jekyllrb.com/">Jekyll<sup style="font-size:60%;">®</sup></a>, <a target="_blank" href="http://evernote.com/">Tumblr<sup style="font-size:60%;">®</sup></a> and (coming soon to <a target="_blank" href="https://wordpress.com/">Wordpress<sup style="font-size:60%;">®</sup></a>).</p>
       </div>

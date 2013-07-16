@@ -6,7 +6,6 @@ h2{ color: #999; font-size:44px; font-weight:normal; padding-top:20px;  }
 a{ color: #86BC45; text-decoration:none; cursor:pointer;}
 a:active, a:hover { color: #96cC55; text-decoration:none; }
 /*-------------- Footer ----------------*/
-.footer{ margin:20px 20px 20px 20px; }
 
 /*-------------- Main ------------------*/
 
@@ -41,7 +40,7 @@ a:active, a:hover { color: #96cC55; text-decoration:none; }
 
 .container {
   /*font-size: 15px;*/
-  font-size: 18px;
+  font-size: 16px;
   line-height: 30px;
 }
 
