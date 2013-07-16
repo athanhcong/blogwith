@@ -497,7 +497,9 @@ app.get('/evernote/sync', function(req, res){
 
 
   if (!notebook) {
-    return res.send('No notebook',500);
+    return res.send('No notebook', 500);
+  } else if (!connectedBlogEngine(user)) {
+      return res.send('Not connect blog', 500);
   }
 
   var notebookGuid = notebook.guid;
@@ -740,7 +742,11 @@ app.get('/evernote/webhook', function(req, res){
       console.log('Can not find notebook');
       res.end('');      
       return;
-    };
+    } else if (!connectedBlogEngine(user)) {
+      console.log('Can not find connected blog engine.');
+      res.end('');
+      return; 
+    }
 
     var notebook = user.evernote.notebook;
 
