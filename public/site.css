@@ -1,7 +1,7 @@
 @charset "utf-8";
 
 * { margin: 0; padding: 0; font-family: Palatino,Georgia, Times, Arial,Helvetica,sans-serif; color: #999; }
-body{ background-color:#F6F0e9;}
+body{}
 h2{ color: #999; font-size:44px; font-weight:normal; padding-top:20px;  }
 a{ color: #86BC45; text-decoration:none; cursor:pointer;}
 a:active, a:hover { color: #96cC55; text-decoration:none; }
