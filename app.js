@@ -201,7 +201,7 @@ app.get('/home', function(req, res){
   console.log("app.get /home");
 
   var indexPageData = {};
-  if (req.user.evernote && req.user.evernote.user) {
+  if (req.user && req.user.evernote && req.user.evernote.user) {
     indexPageData.user = {};
     indexPageData.user.evernote = {
       user: req.user.evernote.user
