@@ -342,14 +342,14 @@ var upsertUserNotebook = function(req, res) {
   console.log("/evernote/create-notebook: " + userId);
 
   // Create notebook
-  var notebookName = "Blog with Evernote";
+  var notebookName = "BlogWith";
   var noteStore = EvernoteLib.Client(req.user.evernote.oauthAccessToken).getNoteStore();
 
   var createNotebook = function() {
 
     var notebookPublishing = new Evernote.Publishing({
-        publicDescription: "Blog with Evernote"
-        , uri : "blog-with-evernote"
+        publicDescription: "BlogWith"
+        , uri : "blogwith"
       });
 
     var notebook = new Evernote.Notebook({
@@ -380,8 +380,8 @@ var upsertUserNotebook = function(req, res) {
 
     var notebookPublishing = new Evernote.Publishing(
       {
-        publicDescription: "Blog with Evernote"
-        , uri : "blog-with-evernote"
+        publicDescription: "BlogWith"
+        , uri : "blogwith"
       });
 
     notebook.published = true;
