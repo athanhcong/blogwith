@@ -518,7 +518,7 @@ app.get('/evernote/sync', function(req, res){
 
   if (!notebook) {
     return res.send('No notebook', 500);
-  } else if (!connectedBlogEngine(user)) {
+  } else if (!connectedBlogEngine(req.user)) {
       return res.send('Not connect blog', 500);
   }
 
@@ -619,9 +619,9 @@ var checkUpdateForPost = function(user, note, callback) {
 
 
 var connectedBlogEngine = function (user) {
-  if (user.github) {
+  if (user.github && user.github.repository) {
     return GithubLib;
-  } else if (user.tumblr) {
+  } else if (user.tumblr && user.tumblr.blog) {
     return TumblrLib;
   } else {
     console.log("ERROR: no engine!");
@@ -691,7 +691,6 @@ var updatePostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, 
 
       if (post) {
         // console.log(data);
-
         BlogEngineLib.updatePostWithNote(user, post, evernoteNote, function(error, data) {
           callback(error, data);
         });
