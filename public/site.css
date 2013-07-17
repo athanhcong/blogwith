@@ -24,7 +24,7 @@ a:active, a:hover { color: #96cC55; text-decoration:none; }
 .top-container .account>p{ font-size:22px; margin:0;}
 
 
-.container .description{text-align:center; font-size:15px;margin-top:60px;}
+.container .description{text-align:center;margin-top:60px;}
 
 
 .container .tabs{float:right; width:200px;list-style:none; padding-top:20px; margin:0;}
@@ -40,7 +40,7 @@ a:active, a:hover { color: #96cC55; text-decoration:none; }
 
 .container {
   /*font-size: 15px;*/
-  font-size: 16px;
+  font-size: 15px;
   line-height: 30px;
 }
 

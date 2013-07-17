@@ -139,7 +139,7 @@ app.get('/', function(req, res){
   console.log("app.get / " + req.session.evernoteUserId);
 
 	if(!req.user) //Unauthenticate User
-		return res.redirect("/home");
+		return res.render("login.html");
 
   var indexPageData = {};
   if (req.user.evernote && req.user.evernote.user) {
