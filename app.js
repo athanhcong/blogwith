@@ -669,9 +669,10 @@ var updatePostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, 
 
   noteStore.getNote(user.evernote.oauthAccessToken, noteGuid, true, false, false, false, function(evernoteNote) {
     
-    // console.log('Get note for updating: Note: ' + JSON.stringify(note));
+    console.log('Get note for updating: Note: ' + JSON.stringify(note));
 
     console.log('Get note for updating: Note: ' + evernoteNote.title);
+
 
     if (validateWithNotebookGuid && evernoteNote.notebookGuid != validateWithNotebookGuid) {
       console.log("Validate notebook failed! " + evernoteNote.notebookGuid + " vs " + validateWithNotebookGuid);
