@@ -200,7 +200,15 @@ app.get('/home', function(req, res){
   
   console.log("app.get /home");
 
-  return res.render("login.html");
+  var indexPageData = {};
+  if (req.user.evernote && req.user.evernote.user) {
+    indexPageData.user = {};
+    indexPageData.user.evernote = {
+      user: req.user.evernote.user
+      , notebook : req.user.evernote.notebook
+    }
+  };
+  return res.render("login.html", indexPageData);
 
 });
 

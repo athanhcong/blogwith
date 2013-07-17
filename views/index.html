@@ -100,13 +100,18 @@
         </li>
       {{else}}
         <li>✏&nbsp;Choose a blog you want to connect:
-          <ul>
-          {{#each user.tumblr.blogs}}
-            <li>
-            ●&nbsp;[<a href="/tumblr/blog/choose?host={{this.host}}">Choose</a>] <a target="_blank" href="{{this.url}}">{{this.host}}</a>
-            </li>
-          {{/each}}
-          </ul>
+          <form style="padding-left:30px;" name="chooseBlog" action="/tumblr/blog/choose" method="get">
+            {{#each user.tumblr.blogs}}
+
+            <input type="radio" name="host" value="{{this.host}}">&nbsp;&nbsp;<a target="_blank" href="{{this.url}}">{{this.host}}</a><br>
+            {{/each}}
+            <input type="submit" class="btn" value="Choose blog">
+          </form>
+          <!-- <ul> -->
+            <!-- <li>
+            ●&nbsp;[<a href="/tumblr/blog/choose?host={{this.host}}">Choose</a>] 
+            </li> -->
+          <!-- </ul> -->
         </li>
 
       {{/if}}
