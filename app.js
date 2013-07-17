@@ -669,7 +669,7 @@ var updatePostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, 
 
   noteStore.getNote(user.evernote.oauthAccessToken, noteGuid, true, false, false, false, function(evernoteNote) {
     
-    console.log('Get note for updating: Note: ' + JSON.stringify(note));
+    console.log('Get note for updating: Note: ' + JSON.stringify(evernoteNote));
 
     console.log('Get note for updating: Note: ' + evernoteNote.title);
 
