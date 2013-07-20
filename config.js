@@ -1,6 +1,6 @@
 
 module.exports = function() {
-config = {};
+  config = {};
   var nodeEnv = process.env.NODE_ENV;
   if (nodeEnv == 'production') {
       config.serverPort = process.env.PORT;

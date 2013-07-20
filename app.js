@@ -63,9 +63,12 @@ var db = mongojs(config.mongoConnectionString, collections);
 var Evernote = require('evernote').Evernote;
 var EvernoteLib = require('./lib/evernote')
   , TumblrLib = require('./lib/tumblr')
-  , GithubLib = require('./lib/github');
+  , GithubLib = require('./lib/github')
+  , WordpressLib = require('./lib/wordpress');
+
 GithubLib.db = db;
 TumblrLib.db = db;
+WordpressLib.db = db;
 
 var url = require('url');
 var flow = require('flow');
@@ -125,7 +128,7 @@ app.configure(function(){
   app.use(GithubLib);
   app.use(EvernoteLib);
   app.use(TumblrLib);
-
+  app.use(WordpressLib);
 });
 
 
