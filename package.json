@@ -24,6 +24,7 @@
     , "request": "2.9.x"
     , "randomstring": "1.x.x"
     , "passport" : "latest"
+    , "passport-oauth": "~0.1.1"
     , "passport-tumblr" : "latest"
     , "tumblrwks" :"latest"
   },
