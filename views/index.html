@@ -122,6 +122,50 @@
       
     </div>
 
+{{else}}
+{{#if user.wordpress.user}}
+
+      <div class="connectItem">        
+        <p>Step 2:&nbsp;&nbsp;&nbsp;<a class='btn-success' href="/wordpress/authentication">
+            Connected with Wordpress
+        </a>
+        &nbsp;
+          <a href="#wordpress"><span>{{user.wordpress.user.username}}</span>
+          <span style="font-size:80%;">▾</span>
+          </a>
+      </p>
+    </div>
+
+      <div class="info wordpress">
+
+      <ul>
+
+      {{#if user.tumblr.blog}} 
+        <li>✓&nbsp;Connected with blog <a target="_blank" href="{{user.tumblr.blog.url}}">{{user.tumblr.blog.host}}</a>
+        </li>
+      {{else}}
+        <li>✏&nbsp;Choose a blog you want to connect:
+          <form style="padding-left:30px;" name="chooseBlog" action="/wordpress/blog/choose" method="get">
+            {{#each user.tumblr.blogs}}
+
+            <input type="radio" name="host" value="{{this.host}}">&nbsp;&nbsp;<a target="_blank" href="{{this.url}}">{{this.host}}</a><br>
+            {{/each}}
+            <input type="submit" class="btn" value="Choose blog">
+          </form>
+          <!-- <ul> -->
+            <!-- <li>
+            ●&nbsp;[<a href="/tumblr/blog/choose?host={{this.host}}">Choose</a>] 
+            </li> -->
+          <!-- </ul> -->
+        </li>
+
+      {{/if}}
+        <li>✏&nbsp;<a href="/wordpress/unlink">Unlink with Wordpress</a>
+        </li>
+
+      </ul>
+      
+    </div>
 {{else}}    
       <div class="connectItem">        
         <p>Step 2:&nbsp;&nbsp;&nbsp;
@@ -130,12 +174,12 @@
           </a>
           &nbsp;OR&nbsp;
           <a class='btn-success' href="/tumblr/authentication">
-            Connect with Tumblr
+            Tumblr
           </a>
-          &nbsp;OR&nbsp;
+<!--           &nbsp;OR&nbsp;
           <a class='btn-success' href="/wordpress/authentication">
             Wordpress
-          </a>
+          </a> -->
 
         </p>
         
@@ -143,39 +187,39 @@
 
 {{/if}}
 {{/if}}
+{{/if}}
 
 
 
       <div class="connectItem">
-        <p>Step 3:&nbsp;&nbsp;&nbsp;<a class='btn-success'>Happy Blogging</a>
+        <p>Step 3:&nbsp;&nbsp;&nbsp;<a href="/#posts" class='btn-success'>Happy Blogging</a>
           {{#if posts.count}}&nbsp;<a href="#posts">
             <span>{{posts.count}} posts and going strong</span>
             <span style="font-size:80%;">▾</span></a>
           {{else}}
-            {{#if user.github.user}}
-              <span>Start by writing your first <a target="_blank" href="https://www.evernote.com/Home.action#b={{user.evernote.notebook.guid}}">note</a>.</span>
+            {{#if connectedEngine}}
+              <span>Start by adding a new note inside <a target="_blank" href="https://www.evernote.com/Home.action#b={{user.evernote.notebook.guid}}">{{user.evernote.notebook.name}}</a> notebook.</span>
             {{/if}}
           {{/if}}
           
         </p>
       </div>
 
-      {{#if posts.latestUpdate}}
       <div class="info posts">
         <ul>
 
-          <li>✏&nbsp;Check our <a target="_blank" href="http://by.blogwith.co/post/55770059482/faq">FAQ</a> to see how it works? 
+          <li>✏&nbsp;Check out our <a target="_blank" href="http://by.blogwith.co/post/55770059482/faq">screencast and FAQ</a> to see how it works? 
           </li>
+{{#if posts.latestUpdate}}
           <li>✏&nbsp;Latest update: <b>{{posts.latestUpdate.evernote.note.title}}</b> 
-
 {{#if posts.latestUpdate.github}}
           (<a target="_blank" href="{{posts.latestUpdate.github.file.html_url}}">Github Link</a>)
-{{/if}}         
+{{/if}}
+        </li>
+{{/if}}
 
-
-        </li></ul>
+      </ul>
       </div>
-      {{/if}}
 
     </div> 
 

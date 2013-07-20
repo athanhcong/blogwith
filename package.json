@@ -26,7 +26,6 @@
     , "passport" : "latest"
     , "passport-tumblr" : "latest"
     , "tumblrwks" :"latest"
-    , "passport-wordpress" : "latest"
   },
   "engines": {
     "node": "0.8.14"

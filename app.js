@@ -155,12 +155,15 @@ app.get('/', function(req, res){
 
   console.log(req.user);
   
+
+  var connectedEngine;
   if (req.user.github && req.user.github.user) {
 
     indexPageData.user.github = {
       user: req.user.github.user
       , repository : req.user.github.repository
     }
+    connectedEngine = 'Github';
 
   } else if (req.user.tumblr && req.user.tumblr.user) {
     indexPageData.user.tumblr = {
@@ -170,10 +173,21 @@ app.get('/', function(req, res){
 
     if (!req.user.tumblr.blog) {
       indexPageData.user.tumblr.blogs = req.user.tumblr.user.blogs;
-
     };
-  } 
 
+    connectedEngine = 'Tumblr';
+  } else if (req.user.wordpress && req.user.wordpress.user) {
+    indexPageData.user.wordpress = {
+      user: req.user.wordpress.user
+      , blog : req.user.wordpress.blog
+    }
+
+    if (!req.user.wordpress.blog) {
+      indexPageData.user.wordpress.blogs = req.user.wordpress.user.blogs;
+    };
+    connectedEngine = 'Wordpress';
+  } 
+  indexPageData.connectedEngine = connectedEngine;
 
   db.posts.find({evernoteUserId : req.session.evernoteUserId}).count(function(error, postsCount) {
     if (postsCount > 0) {
