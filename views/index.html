@@ -16,16 +16,13 @@
     <!-- EVERNOTE -->
       <div class="connectItem">
         <br />
-        <p>Step 1:&nbsp;&nbsp;&nbsp;<a class='btn-success' id="evernoteAuthentication" href="/evernote/authentication">
-          {{#if user.evernote.user}}
-            Connected with Evernote
-          {{else}}
-            Connect with Evernote
-          {{/if}}
-        </a>
+        <p>Step 1:&nbsp;&nbsp;&nbsp;
         {{#if user.evernote.user}}
+          <a class='btn-success' href="#evernote">Connected with Evernote</a>
           &nbsp;<a href="#evernote"><span class="username" id="username">{{user.evernote.user.username}}</span>
           <span style="font-size:80%;">▾</span></a>
+        {{else}}
+          <a class='btn-success' href="/evernote/authentication">Connect with Evernote</a>
         {{/if}}
       </p>
     </div>
@@ -48,7 +45,7 @@
 
 {{#if user.github.user}}
       <div class="connectItem">        
-        <p>Step 2:&nbsp;&nbsp;&nbsp;<a class='btn-success' href="/github/authentication">
+        <p>Step 2:&nbsp;&nbsp;&nbsp;<a class='btn-success' href="#github">
             Connected with Github
         </a>
         &nbsp;
@@ -80,7 +77,7 @@
 {{#if user.tumblr.user}}
 
       <div class="connectItem">        
-        <p>Step 2:&nbsp;&nbsp;&nbsp;<a class='btn-success' href="/tumblr/authentication">
+        <p>Step 2:&nbsp;&nbsp;&nbsp;<a class='btn-success' href="#tumblr">
             Connected with Tumblr
         </a>
         &nbsp;
@@ -126,7 +123,7 @@
 {{#if user.wordpress.user}}
 
       <div class="connectItem">        
-        <p>Step 2:&nbsp;&nbsp;&nbsp;<a class='btn-success' href="/wordpress/authentication">
+        <p>Step 2:&nbsp;&nbsp;&nbsp;<a class='btn-success' href="#wordpress">
             Connected with Wordpress
         </a>
         &nbsp;
