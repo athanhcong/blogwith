@@ -27,6 +27,7 @@
     , "passport-oauth": "~0.1.1"
     , "passport-tumblr" : "latest"
     , "tumblrwks" :"latest"
+    , "pkginfo": "0.2.x"
   },
   "engines": {
     "node": "0.8.14"
