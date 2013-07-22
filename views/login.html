@@ -30,21 +30,20 @@
     <div class="container">
       <p>
       <div class="fb-like" data-href="http://blogwith.co" data-send="true" data-width="800" data-show-faces="false" data-font="arial"></div>
-    </p>
-      <br/><span>Connect with Evernote to get started</span>&nbsp;&nbsp;
+      </p>
+
+      <div>
+      <br/>
+      <span style="font-size:20px;">Get a free trial today!</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
     <!-- EVERNOTE -->
       <span class="connectItem">
-        
-          {{#if user.evernote.user}}
-            <a class='btn-success' href="/#evernote">Connected with Evernote</a>
-          {{else}}
-            <a class='btn-success' id="evernoteAuthentication" href="/evernote/authentication">Connect with Evernote</a>
-          {{/if}}
-        </a>
         {{#if user.evernote.user}}
-          &nbsp;<a href="/#evernote"><span class="username" id="username">{{user.evernote.user.username}}</span></a>
+          <a class='btn-success' href="/#evernote">Connected with Evernote</a>
+        {{else}}
+          <a class='btn-success' id="evernoteAuthentication" href="/evernote/authentication">Connect with Evernote</a>
         {{/if}}
-    </span>
+      </span>
+      </div>
 
 
     <div id="detailTutorial" style="padding-top:70px;">
@@ -52,20 +51,19 @@
       <p>
         For best integration with Evernote, a new notebook named "BlogWith" will appear in your notebook list.<br/>
         Whenever you create or edit a new note inside this special "BlogWith" notebook, BlogWith will sync your note to your blog.<br>
+        Here are <a target="_blank" href="http://by.blogwith.co/post/56131700891/">simple steps to get started</a>.
         
       </p>
 
         
       <h2>Simple and pleasant way to add images into a post</h2>
-      <p>Just drag and drop your images into Evernote. <strike>No more uploading then inserting links.</strike><br/>
+      <p>Just drag and drop your images into Evernote and it's done. <strike>No more uploading then inserting links.</strike><br/>
         <i>(To make the image displayed faster for readers, you may consider to resize the image before adding it into Evernote)</i>
       </p>
       <h2>Edit a post is easier than ever.</h2>
       <p>Just edit your local note and sync. <strike>No more opening, loading and previewing.</strike><br/>
         This works perfectly for fixing your typo mistakes, and any quick editing while reviewing your post.
       </p>
-      <br />
-      <p>You can find more information with our screencast <a target="_blank" href="http://by.blogwith.co/post/55770059482/faq">here</a>.</p>
       <br />
       <p>Happy blogging!</p>
       <br />
