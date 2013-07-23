@@ -843,3 +843,8 @@ app.get('/me', function(req, res){
 server.listen(config.serverPort, function(){
   console.log("Express server listening on port " + config.serverPort)
 })
+
+
+process.on('uncaughtException', function(err) {
+  console.error(err.stack);
+});
