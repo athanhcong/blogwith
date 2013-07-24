@@ -582,9 +582,9 @@ app.get('/evernote/sync', function(req, res){
     var newNotes = notesMetadata.notes;
 
     // test
-    createPostWithMetadata(req.user, newNotes[0].guid, null, cb);
-    // updatePostWithMetadata(req.user, newNotes[0].guid, null, cb);
-    // checkUpdateForPost(req.user, newNotes[0], cb);
+    createPostWithMetadata(req.user, newNotes[0].guid, null, callback);
+    // updatePostWithMetadata(req.user, newNotes[0].guid, null, callback);
+    // checkUpdateForPost(req.user, newNotes[0], callback);
 
     return;
     // end test
@@ -845,6 +845,6 @@ server.listen(config.serverPort, function(){
 })
 
 
-process.on('uncaughtException', function(err) {
-  console.error(err.stack);
-});
+// process.on('uncaughtException', function(err) {
+//   console.error(err.stack);
+// });
