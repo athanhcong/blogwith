@@ -99,7 +99,7 @@ app.configure(function(){
 
     res.locals.session = req.session;
 
-    if (req.session.evernoteUserId && !req.user) {
+    if (req.session && req.session.evernoteUserId && !req.user) {
       db.users.findOne({evernoteId: req.session.evernoteUserId}, function(error, user) {
         if (error) {
           console.log('requesting note found' + req.session.evernoteUserId);
@@ -137,12 +137,13 @@ app.configure(function(){
 //===================================================
 
 // Welcom Page
-app.get('/', function(req, res){
-	
-  console.log("app.get / " + req.session.evernoteUserId);
+app.get('/', function(req, res){	
 
 	if(!req.user) //Unauthenticate User
 		return res.render("login.html");
+
+
+  console.log("app.get / " + req.session.evernoteUserId);
 
   var indexPageData = {};
   if (req.user.evernote && req.user.evernote.user) {
@@ -500,12 +501,6 @@ var upsertUserNotebook = function(req, res) {
 };
 
 app.get('/evernote/create-notebook', upsertUserNotebook);
-
-
-
-
-
-
 
 
 
