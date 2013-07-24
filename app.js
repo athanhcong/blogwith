@@ -582,11 +582,11 @@ app.get('/evernote/sync', function(req, res){
     var newNotes = notesMetadata.notes;
 
     // test
-    // createPostWithMetadata(req.user, newNotes[0].guid, null, cb);
+    createPostWithMetadata(req.user, newNotes[0].guid, null, cb);
     // updatePostWithMetadata(req.user, newNotes[0].guid, null, cb);
     // checkUpdateForPost(req.user, newNotes[0], cb);
 
-    // return;
+    return;
     // end test
 
 
@@ -631,12 +631,17 @@ var checkUpdateForPost = function(user, note, callback) {
 
 
 var connectedBlogEngine = function (user) {
+  
   if (user.github && user.github.repository) {
     return GithubLib;
+
   } else if (user.tumblr && user.tumblr.blog) {
     return TumblrLib;
+
+  } else if (user.wordpress && user.wordpress.blog){
+    return WordpressLib;
+
   } else {
-    console.log("ERROR: no engine!");
     return null;
   }
 }
