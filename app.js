@@ -582,8 +582,8 @@ app.get('/evernote/sync', function(req, res){
     var newNotes = notesMetadata.notes;
 
     // test
-    createPostWithMetadata(req.user, newNotes[0].guid, null, callback);
-    // updatePostWithMetadata(req.user, newNotes[0].guid, null, callback);
+    //createPostWithMetadata(req.user, newNotes[0].guid, null, callback);
+    updatePostWithMetadata(req.user, newNotes[0].guid, null, callback);
     // checkUpdateForPost(req.user, newNotes[0], callback);
 
     return;
@@ -631,7 +631,7 @@ var checkUpdateForPost = function(user, note, callback) {
 
 
 var connectedBlogEngine = function (user) {
-  
+
   if (user.github && user.github.repository) {
     return GithubLib;
 
