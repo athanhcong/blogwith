@@ -21,7 +21,7 @@
     , "hbs": "latest"
     , "mongojs" : "latest"
 
-    , "request": "2.9.x"
+    , "request": "latest"
     , "randomstring": "1.x.x"
     , "passport" : "latest"
     , "passport-oauth": "~0.1.1"
