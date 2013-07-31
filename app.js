@@ -143,7 +143,7 @@ app.get('/', function(req, res){
 		return res.render("login.html");
 
 
-  console.log("app.get / " + req.session.evernoteUserId);
+  console.log("app.get / user: " + req.session.evernoteUserId);
 
   var indexPageData = {};
   if (req.user.evernote && req.user.evernote.user) {
@@ -153,8 +153,6 @@ app.get('/', function(req, res){
       , notebook : req.user.evernote.notebook
     }
   };
-
-  console.log(req.user);
   
 
   var connectedEngine;
@@ -527,7 +525,7 @@ app.get('/evernote/sync2', function(req, res) {
     BlogEngineLib.updatePostWithNote(req.user, post, post.evernote.note, function(error, data) {
       console.log(data);
     });
-    
+
 
   });
 });
