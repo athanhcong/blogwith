@@ -28,6 +28,7 @@
     , "passport-tumblr" : "latest"
     , "pkginfo": "0.2.x"
     , "marked": "latest"
+    , "moment": "latest"
   },
   "engines": {
     "node": "0.8.14"
