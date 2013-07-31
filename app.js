@@ -790,7 +790,7 @@ app.get('/evernote/webhook', function(req, res){
   var reason = query.reason;
 
   db.users.findOne({'evernoteId': evernoteUserId}, function(error, user) {
-    if (error) {
+    if (error || !user) {
       console.log('Can not find user ' + userId);
       res.end('');
       return;
