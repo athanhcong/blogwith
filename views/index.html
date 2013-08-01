@@ -67,9 +67,10 @@
       {{/if}}
         <li>✏&nbsp;<a href="/github/unlink">Unlink with Github</a>
         </li>
-        <li>✏&nbsp;Instruction to <a target="_blank" href="http://jekyllrb.com/">setup Jekyll</a> {{#if user.github.repository}} (You already did it!){{else}} (After setup Jekyll, click Connect with Github to update){{/if}}
+{{#unless user.github.repository}}        
+        <li>✏&nbsp;Instruction to <a target="_blank" href="http://jekyllrb.com/">setup Jekyll</a>. (After setting up, Unlink then Connect with Github again to update)
         </li>
-
+{{/unless}}
       </ul>
       
     </div>
@@ -133,7 +134,7 @@
       <ul>
 
       {{#if user.wordpress.blog}} 
-        <li>✓&nbsp;Connected with blog <a target="_blank" href="{{user.wordpress.blog.URL}}">{{user.wordpress.blog.name}} ({{user.wordpress.blog.host}})</a>
+        <li>✓&nbsp;Connected with blog <a target="_blank" href="{{user.wordpress.blog.URL}}">{{user.wordpress.blog.name}} ({{user.wordpress.blog.host}})</a>.
         </li>
       {{else}}
         <li>✏&nbsp;Choose a blog you want to connect:
@@ -156,21 +157,42 @@
 {{else}}    
       <div class="connectItem">        
         <p>Step 2:&nbsp;&nbsp;&nbsp;
-          <a class='btn-success' href="/github/authentication">
+          <a class='btn-success' href="/#github">
             Connect with Github
           </a>
           &nbsp;OR&nbsp;
-          <a class='btn-success' href="/tumblr/authentication">
+          <a class='btn-success' href="/#tumblr">
             Tumblr
           </a>
           &nbsp;OR&nbsp;
-          <a class='btn-success' href="/wordpress/authentication">
+          <a class='btn-success' href="/#wordpress">
             Wordpress
           </a>
 
         </p>
         
-    </div>      
+      </div>   
+      <div class="info github">
+        <ul>
+          <li>✏&nbsp;Setup your <a target="_blank" href="http://www.jekyllrb.com">Jekyll blog on Github</a>.</li>
+          <li>✏&nbsp;Now, <a href="/github/authentication">click here to connect with Github</a>.</li>
+
+        </ul>
+      </div>    
+      <div class="info tumblr">
+        <ul>
+          <li>✏&nbsp;Create your blog at <a target="_blank" href="http://www.tumblr.com">Tumblr</a>.</li>
+
+          <li>✏&nbsp;Now, <a href="/tumblr/authentication">click here to connect with Tumblr</a>.</li>
+        </ul>
+      </div>
+      <div class="info wordpress">
+        <ul>
+          <li>✏&nbsp;Create your blog at <a target="_blank" href="http://www.wordpress.com">Wordpress.com</a>.</li>
+          <li>✏&nbsp;If your Wordpress are self-hosted, you will need to install Jetpack. Check out <a target="_blank" href="http://by.blogwith.co/post/56978724949/">these instructions</a>.</li>
+          <li>✏&nbsp;Now, <a href="/wordpress/authentication">click here to connect with Wordpress.com</a>.</li>
+        </ul>
+      </div>      
 
 {{/if}}
 {{/if}}
@@ -197,6 +219,10 @@
 
           <li>✏&nbsp;Here are <a target="_blank" href="http://by.blogwith.co/post/56131700891/">simple steps to get started</a>. 
           </li>
+      {{#if user.evernote.notebook}} 
+        <li>✏&nbsp;Open your notebook <a target="_blank" href="https://www.evernote.com/Home.action#b={{user.evernote.notebook.guid}}">{{user.evernote.notebook.name}}</a>.
+        </li>
+      {{/if}}          
 {{#if posts.latestUpdate}}
           <li>✏&nbsp;Latest update: <b>{{posts.latestUpdate.evernote.note.title}}</b> 
 {{#if posts.latestUpdate.github}}
