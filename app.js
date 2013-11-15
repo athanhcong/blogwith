@@ -112,7 +112,7 @@ app.configure(function(){
         next();
       });
     } else {
-      console.log('requesting not logged in');
+      // console.log('requesting not logged in'); #
       next();
     };
     
@@ -677,13 +677,13 @@ var connectedBlogEngine = function (user) {
 
 var createPostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, callback) {
   var noteStore = EvernoteLib.Client(user.evernote.oauthAccessToken).getNoteStore();
-  console.log("createPostWithMetadata: " + noteGuid);
+  // console.log("createPostWithMetadata: " + noteGuid);
   //getNote = function(authenticationToken, guid, withContent, withResourcesData, withResourcesRecognition, withResourcesAlternateData, callback) {
   noteStore.getNote(user.evernote.oauthAccessToken, noteGuid, true, false, false, false, function(note) {
-    console.log('Get note for creating: - Note: ' + note.title);
+    // console.log('Get note for creating: - Note: ' + note.title);
 
     if (validateWithNotebookGuid && note.notebookGuid != validateWithNotebookGuid) {
-      console.log("Validate notebook failed! " + note.notebookGuid + " vs " + validateWithNotebookGuid);
+      // console.log("Validate notebook failed! " + note.notebookGuid + " vs " + validateWithNotebookGuid);
       callback("Validate notebook failed!");
       return;
     };
@@ -718,7 +718,7 @@ var updatePostWithMetadata = function(user, noteGuid, validateWithNotebookGuid, 
 
 
     if (validateWithNotebookGuid && evernoteNote.notebookGuid != validateWithNotebookGuid) {
-      console.log("Validate notebook failed! " + evernoteNote.notebookGuid + " vs " + validateWithNotebookGuid);
+      // console.log("Validate notebook failed! " + evernoteNote.notebookGuid + " vs " + validateWithNotebookGuid);
       callback("Validate notebook failed!");
       return;
     };
@@ -791,19 +791,19 @@ app.get('/evernote/webhook', function(req, res){
 
   db.users.findOne({'evernoteId': evernoteUserId}, function(error, user) {
     if (error || !user) {
-      console.log('Can not find user ' + userId);
+      // console.log('Can not find user ' + userId);
       res.end('');
       return;
     }
     
-    console.log('Found userId: ' + user.evernoteId);
+    // console.log('Found userId: ' + user.evernoteId);
 
     if (!(user && user.evernote && user.evernote.notebook)) {
-      console.log('Can not find notebook');
+      // console.log('Can not find notebook');
       res.end('');      
       return;
     } else if (!connectedBlogEngine(user)) {
-      console.log('Can not find connected blog engine.');
+      // console.log('Can not find connected blog engine.');
       res.end('');
       return; 
     }
@@ -816,7 +816,7 @@ app.get('/evernote/webhook', function(req, res){
     noteStore.getNote(user.evernote.oauthAccessToken, noteGuid, false, false, false, false, function(evernoteNote) {
 
       if (evernoteNote.notebookGuid != notebook.guid) {
-        console.log("Validate notebook failed! " + evernoteNote.notebookGuid + " vs " + notebook.guid);
+        // console.log("Validate notebook failed! " + evernoteNote.notebookGuid + " vs " + notebook.guid);
         res.end('', 200);
         return;
       };
