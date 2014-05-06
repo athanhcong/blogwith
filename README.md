@@ -1,39 +1,18 @@
 # Blog with Evernote
 
-Everest is a <b>ready to run</b> web application using [Evernote API](http://dev.evernote.com/documentation/reference/). This application is an example of how to create [Node.js](http://nodejs.org) application that connect to Evernote. I puts several modules (Thrift, OAuth, and etc) all together to make it really easy for beginners.
+BlogWith is built with [love](http://kong.vn/blog-with-evernote/), the love to make blogging as [easy](http://bosslee.co/2013/07/21/my-struggle-with-jekyll/) and seamlessly as possible.
 
-## How to run the application
-1. Edit file config.js (use your Evernote API key) 
-2. Run everest.js (node everest.js)
-3. Open yours browser to http://localhost:8081/
+BlogWith connects Evernote to Tumblr, Jekyll and Wordpress.
 
-## Others Examples
-There are several other examples in /examples directory. You can run these examples using [Evernote's developer tokens](http://dev.evernote.com/start/core/authentication.php#devtoken).
+- Create a new post now as quick and easy as take a note.
+- Blog anytime with Evernote for Mac, PC, iPhone or Android
+- Insert images to a blog post is blazing fast as just Drag & Drop.
+- Edit a blog post, fix a typo is now super convenient, can totally be done within Evernote app.
+- Try it now: http://blogwith.co
 
-## Using Components
-- express (http://expressjs.com/)
-- oauth (http://github.com/ciaranj/node-oauth)
-- node-thrift (https://github.com/wadey/node-thrift) : Branch performace + A few lines fix
-- evernode (https://github.com/cloudsnap/evernode)	 : Using forked version https://github.com/berryboy/evernode
+It's now possible that you can blog at anytime and any where. No matter that you are using laptop or smartphone, no matter that you are travelling and don't have a stable internet connection.
 
-## REST API
+BlogWith helps you sync your notes with your blog. It works like magic in Blogging!
 
-- GET   /me                       - User Infomation
 
-- GET   /notes                    - NoteStore.findNotes
-- POST  /notes                    - NoteStore.createNote
-- GET   /notes/<guid>	            - NoteStore.getNote
-- POST  /notes/<guid>	            - NoteStore.updateNote
-- POST  /notes/<guid>/delete      - NoteStore.deleteNote
-
-- GET   /tags                     - NoteStore.listTags
-- POST  /tags                     - NoteStore.createTag
-- GET   /tags/<guid>	            - NoteStore.getTag
-- POST  /tags/<guid>	            - NoteStore.updateTag
-- POST  /tags/<guid>/expunge      - NoteStore.expungeTag
-  
-- GET   /notebooks                  - NoteStore.listNotebooks
-- POST  /notebooks                  - NoteStore.createNotebook
-- GET   /notebooks/<guid>	          - NoteStore.getNotebook
-- POST  /notebooks/<guid>	          - NoteStore.updateNotebook
-- POST  /notebooks/<guid>/expunge   - NoteStore.expungeNotebook
+## BlogWith needs your help, join BlogWith and help writers around the world write better and easier.
