@@ -15,4 +15,7 @@ It's now possible that you can blog at anytime and any where. No matter that you
 BlogWith helps you sync your notes with your blog. It works like magic in Blogging!
 
 
-## BlogWith needs your help, join BlogWith and help writers around the world write better and easier.
+### BlogWith needs your help
+_Join BlogWith and help your fellow bloggers around the world write better and easier._
+
+Happy writing!
