@@ -29,6 +29,7 @@
     , "pkginfo": "0.2.x"
     , "marked": "0.2.9"
     , "moment": "2.1.0"
+    , "newrelic"
   },
   "engines": {
     "node": "0.8.14"
