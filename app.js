@@ -1,3 +1,5 @@
+require('newrelic');
+
 const KEY = 'express.sid'
   , SECRET = 'express'
   ;
